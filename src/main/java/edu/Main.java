@@ -1,12 +1,13 @@
 package edu;
 
 import edu.engine.SceneController;
+import edu.engine.SceneManager;
 import edu.ui.MainMenuScene;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-public class Main extends Application implements edu.engine.SceneManager {
+public class Main extends Application implements SceneManager {
 
     private Stage primaryStage; // Делаем primaryStage полем класса
 

@@ -1,5 +1,6 @@
 package edu.game;
 
+import edu.engine.SceneController;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
@@ -31,7 +32,7 @@ public class Bullet {
     }
 
     public boolean isOffScreen() {
-        return y < -HEIGHT; // ИСПРАВЛЕНО: проверяем только верхнюю границу
+        return y < -HEIGHT || y > SceneController.HEIGHT; // ИСПРАВЛЕНО: проверяем только верхнюю границу
     }
 
     public void render(GraphicsContext g) {

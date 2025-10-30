@@ -46,7 +46,7 @@ public class MainMenuScene {
         });
 
         author.setOnAction(e -> {
-            // Будет реализовано позже
+            SceneController.set(new AuthorScene().create());
         });
 
         VBox box = new VBox(20.0, title, start, highScore, author, exit);

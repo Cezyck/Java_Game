@@ -2,6 +2,7 @@ package edu.ui;
 
 import edu.engine.Keys;
 import edu.engine.SceneController;
+import edu.game.Bullet;
 import edu.game.Enemy;
 import edu.game.Player;
 import javafx.animation.AnimationTimer;
@@ -19,12 +20,17 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 public class GameScene {
     private static final double W = SceneController.WIDTH;
     private static final double H = SceneController.HEIGHT;
-
+    private long lastEnemyShotTime = 0;
+    private final long ENEMY_SHOOT_INTERVAL = 3000; // 3 секунды между залпами (было 1000)
+    private final int MAX_SHOOTING_ENEMIES = 4;
+    private final Random random = new Random();
     private final Keys keys = new Keys();
     private boolean paused = false;
     private int score = 0;
@@ -33,6 +39,7 @@ public class GameScene {
     private static final int NUM_STARS = 70;
     private Player player = new Player(W / 2.0, H - 80);
     private final List<Enemy> enemies = new ArrayList<>();
+    private final List<Bullet> enemyBullet = new ArrayList<>();
 
     @SuppressWarnings("CallToPrintStackTrace")
     public Scene create() {
@@ -70,14 +77,7 @@ public class GameScene {
         });
 
         backToMenu.setOnAction(e -> {
-            try {
-                // Предполагается, что MainMenuScene существует
-                Class<?> mainMenuClass = Class.forName("edu.ui.MainMenuScene");
-                Scene mainMenuScene = (Scene) mainMenuClass.getDeclaredMethod("create").invoke(mainMenuClass.newInstance());
-                SceneController.set(mainMenuScene);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+           SceneController.set(new MainMenuScene().create());
         });
 
         for (int i = 0; i < NUM_STARS; i++) {
@@ -86,6 +86,8 @@ public class GameScene {
             double size = Math.random() * 2 + 0.5;
             stars.add(new double[]{x, y, size});
         }
+
+
 
         spawnEnemies();
 
@@ -108,18 +110,43 @@ public class GameScene {
                         enemy.update(dt, W);
                     }
 
+                    updateEnemyShooting(System.currentTimeMillis());
+
                     Enemy.moveAllDown(enemies);
 
                     checkCollisions();
                     checkGameOver();
                 }
-
                 render(g);
             }
         };
         loop.start();
 
         return scene;
+    }
+
+    private void updateEnemyShooting(long now) {
+        long currentTime = System.currentTimeMillis();
+
+        if (currentTime - lastEnemyShotTime >= ENEMY_SHOOT_INTERVAL) {
+            // Выбираем случайных врагов для стрельбы
+            List<Enemy> availableEnemies = new ArrayList<>();
+            for (Enemy enemy : enemies) {
+                if (enemy.isAlive()) {
+                    availableEnemies.add(enemy);
+                }
+            }
+
+            // Перемешиваем и выбираем до MAX_SHOOTING_ENEMIES
+            Collections.shuffle(availableEnemies);
+            int enemiesToShoot = Math.min(MAX_SHOOTING_ENEMIES, availableEnemies.size());
+
+            for (int i = 0; i < enemiesToShoot; i++) {
+                availableEnemies.get(i).shoot();
+            }
+
+            lastEnemyShotTime = currentTime;
+        }
     }
 
     private void render(GraphicsContext g) {
@@ -136,6 +163,7 @@ public class GameScene {
 
         for (Enemy enemy : enemies) {
             enemy.renderEnemy(g);
+            enemy.renderBullets(g);
         }
 
         player.render(g);
@@ -155,8 +183,8 @@ public class GameScene {
         Enemy.resetGlobalState();
         enemies.clear();
 
-        int rows = 5;
-        int cols = 8;
+        int rows = 4;
+        int cols = 5;
         double startX = 50;
         double startY = 80;
         double spacingX = 70;
@@ -166,7 +194,9 @@ public class GameScene {
             for (int col = 0; col < cols; col++) {
                 double x = startX + col * spacingX;
                 double y = startY + row * spacingY;
-                enemies.add(new Enemy(x, y));
+                long delay = 4500 + (long)(Math.random() * 3000);
+                double chance = 0.01 + Math.random() * 0.2;
+                enemies.add(new Enemy(x, y, delay, chance, enemyBullet ));
             }
         }
     }

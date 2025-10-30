@@ -11,25 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Player {
-    private static final Image SPRITE;
-
-    static {
-        // Путь к ресурсу должен быть относителен корня Classpath
-        // Если Player.java находится в edu.game, а изображение в edu.model, то путь:
-        String imagePath = "/Models/player-ship.png";
-
-        try (InputStream is = Player.class.getResourceAsStream(imagePath)) {
-            if (is == null) {
-                // Если поток null, значит, ресурс не найден
-                throw new IllegalArgumentException("Resource not found: " + imagePath);
-            }
-            SPRITE = new Image(is);
-        } catch (Exception e) {
-            // Перехватываем ошибки, чтобы статическая инициализация не упала
-            // и позволяем основной ошибке (Invalid URL) быть брошенной, но уже с контекстом
-            throw new RuntimeException("Failed to load player sprite from " + imagePath, e);
-        }
-    }
+    private static final Image SPRITE = new Image("/Models/player-ship.png");
     private double x, y;
     private final double WIDTH = 120;
     private final double HEIGHT = 100;
