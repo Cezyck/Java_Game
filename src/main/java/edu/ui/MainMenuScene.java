@@ -1,3 +1,6 @@
+package edu.ui;
+
+import edu.engine.SceneController;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
