@@ -13,7 +13,7 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <javafx.version>22</javafx.version>
-        <main.class>Main</main.class>
+        <main.class>edu.Main</main.class>
         <javafx.plugin.version>0.0.8</javafx.plugin.version>
     </properties>
 

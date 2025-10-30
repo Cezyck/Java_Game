@@ -1,55 +1,111 @@
 package edu.game;
 
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.paint.Color;
+import javafx.scene.image.Image;
+
+import java.util.List;
 
 public class Enemy {
+    private static final Image SPRITE = new Image("/Models/alien.png");
     private double x;
     private double y;
-    private int W = 42;
-    private int H = 26;
+    private final int WIDTH = 80;
+    private final int HEIGHT = 50;
+    private boolean alive = true;
 
-    //скорость по X
-    private double vx = 45; //пикселей в секунду вправо
-    private double vy = 0; // пикселей в секунду вниз
+    // Глобальные параметры
+    private static double globalVx = 45;
+    private static boolean shouldMoveDown = false;
+    private static boolean boundaryHitThisFrame = false;
+
+    // Ограничение спуска (макс. Глубина)
+    private static final double MAX_DESCENT_Y = 600;
 
     public Enemy(double x, double y) {
         this.x = x;
         this.y = y;
     }
-    public void update (double dt, double worldW){
-        x += vx * dt;
-        y += vy * dt;
 
-        if(x<20){
-            x=20;
-            vx = -vx;
-        } else if (x + W > worldW - 20) {
-            x = worldW - 20 - W;
-            vx = -vx;
+    public void update(double dt, double worldW) {
+        if (!alive) return;
+
+        // Обычное горизонтальное движение
+        x += globalVx * dt;
+
+        boolean hitBoundary = false;
+        if (x < 20) {
+            x = 20;
+            hitBoundary = true;
+        } else if (x + WIDTH > worldW - 20) {
+            x = worldW - 20 - WIDTH;
+            hitBoundary = true;
         }
-        //Можно добавить медленное спускание
-        // y += vy * dt
-    }
-    public void renderEnemy(GraphicsContext g){
-        g.setFill(Color.web("#FF5C5C"));
-        g.fillRoundRect(x, y, W, H, 6,6 );
-        g.setFill(Color.web("#990000"));
-        g.fillRect(x+10, y + 6 , 5, 5);//глаза врага
-        g.fillRect(x+26, y + 6 , 5, 5);
 
+        if (hitBoundary && !boundaryHitThisFrame) {
+            boundaryHitThisFrame = true;
+            shouldMoveDown = true;
+        }
+    }
+
+    // Централизованный спуск всех врагов (Необходим для GameScene)
+    public static void moveAllDown(List<Enemy> enemies) {
+        if (!shouldMoveDown) return;
+
+        double descentAmount = 25;
+        for (Enemy e : enemies) {
+            if (e.alive && e.y < MAX_DESCENT_Y) {
+                e.y += descentAmount;
+            }
+        }
+
+        globalVx = -globalVx;
+        shouldMoveDown = false;
+        boundaryHitThisFrame = false;
+    }
+
+    public void renderEnemy(GraphicsContext g) {
+        if (!alive) return;
+
+        // вывод изображения противника
+        g.drawImage(SPRITE, x, y, WIDTH, HEIGHT);
+    }
+
+    public static void resetGlobalState() {
+        globalVx = 45;
+        shouldMoveDown = false;
+        boundaryHitThisFrame = false;
+    }
+
+    public void destroy() {
+        this.alive = false;
+    }
+
+    public boolean isAlive() {
+        return alive;
     }
 
     public double getX() {
         return x;
     }
+
     public double getY() {
         return y;
     }
-    public int getW() {
-        return W;
+
+    public int getWidth() {
+        return WIDTH;
     }
-    public int getH() {
-        return H;
+
+    public int getHeight() {
+        return HEIGHT;
+    }
+
+    public boolean collidesWith(Bullet bullet) {
+        if (!alive) return false;
+
+        return bullet.getX() >= x &&
+                bullet.getX() <= x + WIDTH &&
+                bullet.getY() >= y &&
+                bullet.getY() <= y + HEIGHT;
     }
 }

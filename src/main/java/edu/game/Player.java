@@ -1,102 +1,138 @@
 package edu.game;
 
-import com.sun.prism.image.Coords;
 import edu.engine.Keys;
 import edu.engine.SceneController;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
-import javafx.scene.paint.Color;
 
+import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-/**
- Игрок: позиция, движение игрока, стрельба
- */
 public class Player {
-    private double x;
-    private  double y;
-    private double speed = 300;  //скорость игрока
-    private int lives = 3; // количество жизней
-    private int hp = 3;
+    private static final Image SPRITE;
 
+    static {
+        // Путь к ресурсу должен быть относителен корня Classpath
+        // Если Player.java находится в edu.game, а изображение в edu.model, то путь:
+        String imagePath = "/Models/player-ship.png";
 
-    //стрельба
-    private long  lastShot = 0;
-    private long fireDelay = 140_000_000L;
-
+        try (InputStream is = Player.class.getResourceAsStream(imagePath)) {
+            if (is == null) {
+                // Если поток null, значит, ресурс не найден
+                throw new IllegalArgumentException("Resource not found: " + imagePath);
+            }
+            SPRITE = new Image(is);
+        } catch (Exception e) {
+            // Перехватываем ошибки, чтобы статическая инициализация не упала
+            // и позволяем основной ошибке (Invalid URL) быть брошенной, но уже с контекстом
+            throw new RuntimeException("Failed to load player sprite from " + imagePath, e);
+        }
+    }
+    private double x, y;
+    private final double WIDTH = 120;
+    private final double HEIGHT = 100;
+    private final int lives = 3;
     private final List<Bullet> bullets = new ArrayList<>();
 
-    public Player(double startX, double startY) {
-        this.x = startX;
-        this.y = startY;
+    private long lastShotTime = 0;
+    private static final long SHOOT_DELAY = 400_000_000; // 0.4 сек
+
+    public Player(double x, double y) {
+        this.x = x;
+        this.y = y;
     }
 
+    public void update(double dt, long now, Keys keys, List<Enemy> enemies) {
+        double moveX = 0, moveY = 0;
 
-    public void update(double dt, long now, Keys key){
-        double vx = 0, vy = 0;
+        // 🔧 управление: WASD
+        if (keys.isDown(KeyCode.A)) moveX -= 1;
+        if (keys.isDown(KeyCode.D)) moveX += 1;
+        if (keys.isDown(KeyCode.W)) moveY -= 1;
+        if (keys.isDown(KeyCode.S)) moveY += 1;
 
-        if (key.isDown(KeyCode.A) || key.isDown(KeyCode.LEFT)) vx -= speed;
-        if (key.isDown(KeyCode.D) || key.isDown(KeyCode.RIGHT)) vx += speed;
-        if (key.isDown(KeyCode.W) || key.isDown(KeyCode.UP)) vy -= speed;
-        if (key.isDown(KeyCode.S) || key.isDown(KeyCode.DOWN)) vy += speed;
+        // ➡️ Движение
+        double speed = 250;
+        x += moveX * speed * dt;
+        y += moveY * speed * dt;
 
-        x += vx * dt;
-        y +=  vy * dt;
+        // 🔧 Границы экрана (горизонталь)
+        x = Math.max(0, Math.min(x, SceneController.WIDTH - WIDTH));
 
+        // 💡 ИСПРАВЛЕНИЕ: Новая логика ограничения Y (держим корабль под врагами)
+        double topBoundary = getTopBoundary(enemies);
 
-        //Проверка на границу экрана
-        double W = SceneController.WIDTH;
-        double H = SceneController.HEIGHT;
+        // 🔧 Границы экрана (вертикаль)
+        // Игрок не может подняться ВЫШЕ (y < topBoundary)
+        // И не может опуститься НИЖЕ (y > H - HEIGHT)
+        y = Math.max(topBoundary, Math.min(y, SceneController.HEIGHT - HEIGHT));
 
-        if(x < 32 ) x =32;
-        if (x>W -32) x = W -32;
-        if (y < 80) y = 80;
-        if (y > H -80) y = H - 80;
+        // 🔫 Обновление пуль
+        bullets.removeIf(b -> !b.update(dt));
 
-        if (key.isDown(KeyCode.SPACE) && now - lastShot > fireDelay){
-            bullets.add(new Bullet(x, y -36 , vy - 500));
-            lastShot = now;
+        // 🔫 Стрельба на SPACE
+        if (keys.isDown(KeyCode.SPACE)) {
+            shoot(now);
         }
+    }
 
-        //обновление пуль и их удаление
-        Iterator<Bullet> it = bullets.iterator();
-        while (it.hasNext()){
-            Bullet b = it.next();
-            b.update(dt);
-            if (b.isOffScreen()){
-                it.remove();
+    private static double getTopBoundary(List<Enemy> enemies) {
+        double maxEnemyBottomY = 0; // Ищем "дно" самого нижнего живого врага
+        for (Enemy e : enemies) {
+            if (e.isAlive()) { // Если враг жив, учитываем его
+                maxEnemyBottomY = Math.max(maxEnemyBottomY, e.getY() + e.getHeight());
             }
         }
 
-
+        // Устанавливаем "барьер" (верхняя граница для игрока)
+        // Игрок должен быть минимум на 20px ниже нижнего врага (если враги есть)
+        // Если врагов нет (maxEnemyBottomY = 0), то topBoundary = 0 (верх экрана).
+        return (maxEnemyBottomY > 0) ? (maxEnemyBottomY + 20) : 0;
     }
-    public  void render (GraphicsContext g){
-        //кораблик
-        g.setFill(Color.web("#2E8BFF"));
-        g.fillRoundRect(x -22, y -14, 44, 28, 10, 10);
-        g.setFill(Color.web("#FF9500"));
-        g.fillRect(x -6, y -24, 12, 12 );
 
-        //пули
-        g.setFill(Color.web("#00C2FF"));
-        for(Bullet b :  bullets){
-            g.fillRoundRect(b.x -2, b.y -10, -4, 12,4,4 );
+    private void shoot(long now) {
+        if (now - lastShotTime > SHOOT_DELAY) {
+            // Передаем отрицательную скорость (-600) для полета вверх
+            bullets.add(new Bullet(x + WIDTH / 2 - 2, y - 10, -600));
+            lastShotTime = now;
         }
     }
 
-    //пригодится когда враги будет в нас стрелять
-    public int getLives() {return lives;}
-    public int getHp() {return hp;}
+    public void render(GraphicsContext g) {
+        // Добавление изображения
+        g.drawImage(SPRITE, x, y, WIDTH, HEIGHT);
+
+        // Отрисовка пуль остается
+        for (Bullet b : bullets) b.render(g);
+    }
+
+    public int getLives() {
+        return lives;
+    }
+
+    public double getX() {
+        return x;
+    }
+
+    public double getWidth() {
+        return WIDTH;
+    }
+
+    public double getHeight() {
+        return HEIGHT;
+    }
+
+    public boolean isAlive() {
+        return lives > 0;
+    }
 
     public List<Bullet> getBullets() {
         return bullets;
     }
-    public double getX(){
-        return x;
-    }
-    public double getY(){
+
+    public double getY() {
         return y;
     }
 }
