@@ -15,7 +15,7 @@ public class Player {
     private double x, y;
     private final double WIDTH = 120;
     private final double HEIGHT = 100;
-    private final int lives = 3;
+    private  int lives = 3;
     private final List<Bullet> bullets = new ArrayList<>();
 
     private long lastShotTime = 0;
@@ -82,6 +82,13 @@ public class Player {
         }
     }
 
+    public  void takeDamage(){
+        if(lives > 0){
+            lives--;
+        }
+    }
+
+
     public void render(GraphicsContext g) {
         // Добавление изображения
         g.drawImage(SPRITE, x, y, WIDTH, HEIGHT);
@@ -117,4 +124,12 @@ public class Player {
     public double getY() {
         return y;
     }
+    //проверка на попадание в игрока
+    public boolean collidesWith(Bullet Bullet) {
+        return Bullet.getX() >= x &&
+                Bullet.getX() <= x + WIDTH-10 &&
+                Bullet.getY() >= y &&
+                Bullet.getY() <= y + HEIGHT;
+    }
+
 }

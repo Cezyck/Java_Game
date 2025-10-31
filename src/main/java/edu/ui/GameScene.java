@@ -23,8 +23,9 @@ import javafx.scene.text.FontWeight;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
+
 
 public class GameScene {
     private static final double W = SceneController.WIDTH;
@@ -32,7 +33,6 @@ public class GameScene {
     private long lastEnemyShotTime = 0;
     private final long ENEMY_SHOOT_INTERVAL = 3_000_000_000L; // 3 секунды между залпами (было 1000)
     private final int MAX_SHOOTING_ENEMIES = 4;
-    private final Random random = new Random();
     private final Keys keys = new Keys();
     private boolean paused = false;
     private  boolean isGameOver = false;
@@ -45,7 +45,6 @@ public class GameScene {
     private final List<Bullet> enemyBullet = new ArrayList<>();
     private StackPane root; // Ссылка на корневой элемент
 
-    @SuppressWarnings("CallToPrintStackTrace")
     public Scene create() {
         Canvas canvas = new Canvas(W, H);
         canvas.setMouseTransparent(true);
@@ -82,9 +81,7 @@ public class GameScene {
             overlay.setMouseTransparent(true);
         });
 
-        backToMenu.setOnAction(e -> {
-            SceneController.set(new MainMenuScene().create());
-        });
+        backToMenu.setOnAction(e -> SceneController.set(new MainMenuScene().create()));
 
         for (int i = 0; i < NUM_STARS; i++) {
             double x = Math.random() * W;
@@ -124,6 +121,7 @@ public class GameScene {
                     Enemy.moveAllDown(enemies, (int) aliveEnemiesCount);
 
                     checkCollisionsEnemy();
+                    checkCollisionsPlayer();
                     checkGameOver();
                 }
                 render(g);
@@ -173,7 +171,7 @@ public class GameScene {
         if (!isGameOver) {
             for (Enemy enemy : enemies) {
                 enemy.renderEnemy(g);
-                enemy.renderBullets(g);
+                enemy.renderenemyBullet(g);
             }
 
             player.render(g);
@@ -184,8 +182,8 @@ public class GameScene {
             g.fillText("LIVES: " + player.getLives(), W - 100, 30);
             g.fillText("WAVE: " + wave, W / 2 - 30, 30);
 
-            g.setFill(Color.WHITE);
-            g.setFont(Font.font("Arial", 12));
+            g.setFill(Color.LIME);
+            g.setFont(Font.font("Arial", 16));
             g.fillText("Enemies: " + enemies.size(), 20, H - 20);
         }
     }
@@ -213,25 +211,25 @@ public class GameScene {
     }
 
     private void checkCollisionsEnemy() {
-        List<Bullet> bulletsToRemove = new ArrayList<>();
-        List<Enemy> enemiesToRemove = new ArrayList<>();
+        Iterator<Bullet> bulletIterator = player.getBullets().iterator();
 
-        for (Bullet bullet : player.getBullets()) {
-            for (Enemy enemy : enemies) {
+        while (bulletIterator.hasNext()) {
+            Bullet bullet = bulletIterator.next();
+            boolean bulletHit = false;
+
+            Iterator<Enemy> enemyIterator = enemies.iterator();
+            while (enemyIterator.hasNext() && !bulletHit) {
+                Enemy enemy = enemyIterator.next();
                 if (enemy.isAlive() && enemy.collidesWith(bullet)) {
-                    bulletsToRemove.add(bullet);
-                    enemiesToRemove.add(enemy);
+                    bulletIterator.remove(); // Удаляем пулю
+                    enemy.destroy(); // Уничтожаем врага
                     score += 100;
-                    break;
+                    bulletHit = true; // Пуля попала, выходим из цикла
                 }
             }
         }
 
-        player.getBullets().removeAll(bulletsToRemove);
-        for (Enemy enemy : enemiesToRemove) {
-            enemy.destroy();
-        }
-
+        // Удаляем мертвых врагов
         enemies.removeIf(e -> !e.isAlive());
 
         if (enemies.isEmpty()) {
@@ -240,7 +238,17 @@ public class GameScene {
             spawnEnemies();
         }
     }
-
+    private void checkCollisionsPlayer(){
+        Iterator<Bullet> iterator = enemyBullet.iterator();
+        while (iterator.hasNext()) {
+            Bullet bullet = iterator.next();
+            if (player.getLives() > 0 && player.collidesWith(bullet)) {
+                System.out.println("Player hit! Lives before: " + player.getLives());
+                iterator.remove(); // Безопасное удаление из списка
+                player.takeDamage();
+            }
+        }
+    }
 
     private void gameOver() {
         isGameOver = true;
@@ -270,9 +278,7 @@ public class GameScene {
             gameOverScene.toFront(); // Важно: помещаем поверх всего
         }
 
-        mainMenu.setOnAction(e -> {
-            SceneController.set(new MainMenuScene().create());
-        });
+        mainMenu.setOnAction(e -> SceneController.set(new MainMenuScene().create()));
 
         retry.setOnAction(e -> {
             // Перезапуск игры
@@ -309,6 +315,7 @@ public class GameScene {
         enemies.clear();
         enemyBullet.clear();
         spawnEnemies();
+        paused = false;
     }
 
     private Button createGameButton(String text) {

@@ -18,7 +18,7 @@ public class Enemy{
     private static boolean shouldMoveDown = false;
     private static boolean boundaryHitThisFrame = false;
     private final long SHOOT_DELAY; // 0.7 сек
-    private final List<Bullet> bullets;
+    private final List<Bullet> enemyBullet;
     private final double shootChance;
 
     // Ограничение спуска (макс. Глубина)
@@ -29,7 +29,7 @@ public class Enemy{
         this.y = y;
         this.SHOOT_DELAY = SHOOT_DELAY;
         this.shootChance = shootChance;
-        this.bullets = enemyBullet;
+        this.enemyBullet = enemyBullet;
     }
 
     public void update(double dt, double worldW) {
@@ -66,11 +66,11 @@ public class Enemy{
 
 
 
-        bullets.add(new Bullet(bulletX, bulletY, baseSpeed, color));
+        enemyBullet.add(new Bullet(bulletX, bulletY, baseSpeed, color));
     }
 
-    public  void renderBullets(GraphicsContext gc) {
-        for (Bullet bullet : bullets){
+    public  void renderenemyBullet(GraphicsContext gc) {
+        for (Bullet bullet : enemyBullet){
             bullet.render(gc);
         }
     }
@@ -87,7 +87,7 @@ public class Enemy{
             }
         }
         double baseSpeed = 65;
-        double speedBonus = 2.2;
+        double speedBonus = 2.5;
         double newGlobalVx = baseSpeed;
         if (enemiesAliveCount <= 10){
             newGlobalVx = baseSpeed * speedBonus;
@@ -140,12 +140,13 @@ public class Enemy{
         return HEIGHT;
     }
 
-    public boolean collidesWith(Bullet bullet) {
+    public boolean collidesWith(Bullet Bullet) {
         if (!alive) return false;
 
-        return bullet.getX() >= x &&
-                bullet.getX() <= x + WIDTH &&
-                bullet.getY() >= y &&
-                bullet.getY() <= y + HEIGHT;
+        return Bullet.getX() >= x &&
+                Bullet.getX() <= x + WIDTH &&
+                Bullet.getY() >= y &&
+                Bullet.getY() <= y + HEIGHT;
     }
+
 }
