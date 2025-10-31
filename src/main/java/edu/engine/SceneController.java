@@ -4,8 +4,8 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 public class SceneController {
-    public static final double WIDTH = 800;
-    public static final double HEIGHT = 600;
+    public static final double WIDTH = 900;
+    public static final double HEIGHT = 750;
 
     private static Stage primaryStage;
     private static SceneManager sceneManager;

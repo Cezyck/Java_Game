@@ -9,7 +9,7 @@ public class Bullet {
     private double y;
     private double vy;
     private final int WIDTH = 4;
-    private final int HEIGHT = 12;
+    private final int HEIGHT = 17;
     private final Color color;
 
     public Bullet(double x, double y, double vy) {
@@ -37,11 +37,11 @@ public class Bullet {
 
     public void render(GraphicsContext g) {
         g.setFill(color);
-        g.fillRoundRect(x - WIDTH/2, y - HEIGHT/2, WIDTH, HEIGHT, 4, 4);
+        g.fillRoundRect(x - (double) WIDTH /2, y - (double) HEIGHT /2, WIDTH, HEIGHT, 4, 4);
 
         // Эффект свечения пули
         g.setFill(Color.web("#FFFFFF"));
-        g.fillRoundRect(x - 1, y - HEIGHT/2 + 2, 2, HEIGHT - 4, 2, 2);
+        g.fillRoundRect(x - 1, y - (double) HEIGHT /2 + 2, 2, HEIGHT - 4, 2, 2);
     }
 
     // Геттеры для проверки столкновений
@@ -55,6 +55,14 @@ public class Bullet {
 
     public int getWidth() {
         return WIDTH;
+    }
+
+    public double getVy() {
+        return vy;
+    }
+
+    public void setVy(double vy) {
+        this.vy = vy;
     }
 
     public int getHeight() {

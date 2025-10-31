@@ -28,7 +28,7 @@ public class GameScene {
     private static final double W = SceneController.WIDTH;
     private static final double H = SceneController.HEIGHT;
     private long lastEnemyShotTime = 0;
-    private final long ENEMY_SHOOT_INTERVAL = 3000; // 3 секунды между залпами (было 1000)
+    private final long ENEMY_SHOOT_INTERVAL = 3_000_000_000L; // 3 секунды между залпами (было 1000)
     private final int MAX_SHOOTING_ENEMIES = 4;
     private final Random random = new Random();
     private final Keys keys = new Keys();
@@ -110,11 +110,12 @@ public class GameScene {
                         enemy.update(dt, W);
                     }
 
-                    updateEnemyShooting(System.currentTimeMillis());
+                    enemyBullet.removeIf(bullet -> !bullet.update(dt));
+                    updateEnemyShooting(now);
 
                     Enemy.moveAllDown(enemies);
 
-                    checkCollisions();
+                    checkCollisionsEnemy();
                     checkGameOver();
                 }
                 render(g);
@@ -126,10 +127,7 @@ public class GameScene {
     }
 
     private void updateEnemyShooting(long now) {
-        long currentTime = System.currentTimeMillis();
-
-        if (currentTime - lastEnemyShotTime >= ENEMY_SHOOT_INTERVAL) {
-            // Выбираем случайных врагов для стрельбы
+        if (now - lastEnemyShotTime >= ENEMY_SHOOT_INTERVAL) {
             List<Enemy> availableEnemies = new ArrayList<>();
             for (Enemy enemy : enemies) {
                 if (enemy.isAlive()) {
@@ -137,15 +135,26 @@ public class GameScene {
                 }
             }
 
-            // Перемешиваем и выбираем до MAX_SHOOTING_ENEMIES
+            // Считаем количество живых врагов
+            int aliveEnemiesCount = availableEnemies.size();
+
             Collections.shuffle(availableEnemies);
             int enemiesToShoot = Math.min(MAX_SHOOTING_ENEMIES, availableEnemies.size());
 
             for (int i = 0; i < enemiesToShoot; i++) {
-                availableEnemies.get(i).shoot();
+                availableEnemies.get(i).shoot(aliveEnemiesCount); // Передаем количество
             }
 
-            lastEnemyShotTime = currentTime;
+            lastEnemyShotTime = now;
+        }
+    }
+
+    private void increaseEnemyBulletSpeed() {
+        for (Bullet bullet : enemyBullet) {
+            // Увеличиваем скорость существующих пуль
+            if (bullet.getVy() > 0) { // проверяем, что это пуля врага (летит вниз)
+                bullet.setVy(bullet.getVy() * 1.2); // увеличиваем на 20%
+            }
         }
     }
 
@@ -201,11 +210,11 @@ public class GameScene {
         }
     }
 
-    private void checkCollisions() {
-        List<edu.game.Bullet> bulletsToRemove = new ArrayList<>();
+    private void checkCollisionsEnemy() {
+        List<Bullet> bulletsToRemove = new ArrayList<>();
         List<Enemy> enemiesToRemove = new ArrayList<>();
 
-        for (edu.game.Bullet bullet : player.getBullets()) {
+        for (Bullet bullet : player.getBullets()) {
             for (Enemy enemy : enemies) {
                 if (enemy.isAlive() && enemy.collidesWith(bullet)) {
                     bulletsToRemove.add(bullet);
@@ -254,7 +263,6 @@ public class GameScene {
         Button button = new Button(text);
         button.setPrefWidth(200);
         button.setPrefHeight(40);
-
         button.setStyle(
                 "-fx-background-color: black; " +
                         "-fx-text-fill: #00ff00; " +

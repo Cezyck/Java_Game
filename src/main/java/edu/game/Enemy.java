@@ -15,7 +15,6 @@ public class Enemy{
     private final int WIDTH = 80;
     private final int HEIGHT = 50;
     private boolean alive = true;
-    private long lastShotTime = 0;
     private final Random random = new Random();
 
     // Глобальные параметры
@@ -24,7 +23,7 @@ public class Enemy{
     private static boolean boundaryHitThisFrame = false;
     private final long SHOOT_DELAY; // 0.7 сек
     private final List<Bullet> bullets;
-    private double shootChance;
+    private final double shootChance;
 
     // Ограничение спуска (макс. Глубина)
     private static final double MAX_DESCENT_Y = 600;
@@ -57,28 +56,35 @@ public class Enemy{
             shouldMoveDown = true;
         }
 
-        // 🔫 Обновление пуль
-        bullets.removeIf(b -> !b.update(dt));
-
-    }
-
-    public void tryToShoot() {
-        long randomDelay = (long)(SHOOT_DELAY * (0.7 + random.nextDouble() * 0.6));
-
-        // Случайный шанс выстрела
-        if (random.nextDouble() < shootChance) {
-            shoot();
-        }
     }
 
 
-    public void shoot(){
+
+    public void shoot(int aliveEnemiesCount) {  // Добавляем параметр
         Color color = Color.RED;
-        // Исправь позиционирование пули и направление
-        double bulletX = x + (double) WIDTH / 2; // Центр врага по X
-        double bulletY = y + HEIGHT;    // Нижняя граница врага
-        bullets.add(new Bullet(bulletX, bulletY, 20, color)); // Положительная скорость = вниз
+        double bulletX = x + (double) WIDTH / 2;
+        double bulletY = y + HEIGHT;
+
+        // Базовая скорость + бонус когда врагов мало
+        double baseSpeed = 300;
+
+        // ИЗМЕНЕНИЕ: Формула для увеличения скорости, когда врагов МАЛО.
+        // Предположим, что максимальное количество врагов при спав не - 20 (4 ряда * 5 колонок в GameScene.java).
+        // Максимальное количество - это то, от чего мы будем отталкиваться.
+        // Если врагов 20, (20 - 20) * 1.5 = 0 (бонус 0).
+        // Если врагов 1, (20 - 1) * 1.5 = 28.5 (бонус 28.5).
+        double MAX_ENEMIES_FOR_BONUS = 20;
+
+        // Формула для увеличения скорости, когда врагов мало.
+        double speedBonus = Math.max(0, (MAX_ENEMIES_FOR_BONUS - aliveEnemiesCount) * 1.5);
+
+        // Ограничиваем максимальную скорость
+        double finalSpeed = Math.min(baseSpeed + speedBonus, 400); // Увеличил лимит до 65
+
+        bullets.add(new Bullet(bulletX, bulletY, finalSpeed, color));
     }
+
+// ... (другие методы)
 
     public  void renderBullets(GraphicsContext gc) {
         for (Bullet bullet : bullets){
