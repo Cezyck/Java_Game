@@ -3,10 +3,8 @@ package edu.game;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
-
-
 import java.util.List;
-import java.util.Random;
+
 
 public class Enemy{
     private static final Image SPRITE = new Image("/Models/alien.png");
@@ -15,10 +13,8 @@ public class Enemy{
     private final int WIDTH = 80;
     private final int HEIGHT = 50;
     private boolean alive = true;
-    private final Random random = new Random();
-
     // Глобальные параметры
-    private static double globalVx = 45;
+    private static double globalVx = 65;
     private static boolean shouldMoveDown = false;
     private static boolean boundaryHitThisFrame = false;
     private final long SHOOT_DELAY; // 0.7 сек
@@ -26,7 +22,7 @@ public class Enemy{
     private final double shootChance;
 
     // Ограничение спуска (макс. Глубина)
-    private static final double MAX_DESCENT_Y = 600;
+    private static final double MAX_DESCENT_Y = 700;
 
     public Enemy(double x, double y, long SHOOT_DELAY, double shootChance, List<Bullet> enemyBullet ) {
         this.x = x;
@@ -66,25 +62,12 @@ public class Enemy{
         double bulletY = y + HEIGHT;
 
         // Базовая скорость + бонус когда врагов мало
-        double baseSpeed = 300;
+        double baseSpeed = 350;
 
-        // ИЗМЕНЕНИЕ: Формула для увеличения скорости, когда врагов МАЛО.
-        // Предположим, что максимальное количество врагов при спав не - 20 (4 ряда * 5 колонок в GameScene.java).
-        // Максимальное количество - это то, от чего мы будем отталкиваться.
-        // Если врагов 20, (20 - 20) * 1.5 = 0 (бонус 0).
-        // Если врагов 1, (20 - 1) * 1.5 = 28.5 (бонус 28.5).
-        double MAX_ENEMIES_FOR_BONUS = 20;
 
-        // Формула для увеличения скорости, когда врагов мало.
-        double speedBonus = Math.max(0, (MAX_ENEMIES_FOR_BONUS - aliveEnemiesCount) * 1.5);
 
-        // Ограничиваем максимальную скорость
-        double finalSpeed = Math.min(baseSpeed + speedBonus, 400); // Увеличил лимит до 65
-
-        bullets.add(new Bullet(bulletX, bulletY, finalSpeed, color));
+        bullets.add(new Bullet(bulletX, bulletY, baseSpeed, color));
     }
-
-// ... (другие методы)
 
     public  void renderBullets(GraphicsContext gc) {
         for (Bullet bullet : bullets){
@@ -94,17 +77,28 @@ public class Enemy{
 
 
     // Централизованный спуск всех врагов (Необходим для GameScene)
-    public static void moveAllDown(List<Enemy> enemies) {
+    public static void moveAllDown(List<Enemy> enemies, int enemiesAliveCount) {
         if (!shouldMoveDown) return;
 
-        double descentAmount = 15;
-        for (Enemy e : enemies) {
-            if (e.alive && e.y < MAX_DESCENT_Y) {
-                e.y += descentAmount;
+        double descentAmount = 25;
+        for (Enemy enemy : enemies) {
+            if (enemy.alive && enemy.y < MAX_DESCENT_Y) {
+                enemy.y += descentAmount;
             }
         }
+        double baseSpeed = 65;
+        double speedBonus = 2.2;
+        double newGlobalVx = baseSpeed;
+        if (enemiesAliveCount <= 10){
+            newGlobalVx = baseSpeed * speedBonus;
+        }
 
-        globalVx = -globalVx;
+        if (globalVx > 0) {
+            globalVx = -newGlobalVx;
+        } else {
+            globalVx = newGlobalVx;
+        }
+
         shouldMoveDown = false;
         boundaryHitThisFrame = false;
     }
@@ -117,7 +111,7 @@ public class Enemy{
     }
 
     public static void resetGlobalState() {
-        globalVx = 45;
+        globalVx = 65;
         shouldMoveDown = false;
         boundaryHitThisFrame = false;
     }

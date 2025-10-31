@@ -12,12 +12,14 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,6 +35,7 @@ public class GameScene {
     private final Random random = new Random();
     private final Keys keys = new Keys();
     private boolean paused = false;
+    private  boolean isGameOver = false;
     private int score = 0;
     private int wave = 1;
     private final List<double[]> stars = new ArrayList<>();
@@ -40,10 +43,12 @@ public class GameScene {
     private Player player = new Player(W / 2.0, H - 80);
     private final List<Enemy> enemies = new ArrayList<>();
     private final List<Bullet> enemyBullet = new ArrayList<>();
+    private StackPane root; // Ссылка на корневой элемент
 
     @SuppressWarnings("CallToPrintStackTrace")
     public Scene create() {
         Canvas canvas = new Canvas(W, H);
+        canvas.setMouseTransparent(true);
         GraphicsContext g = canvas.getGraphicsContext2D();
 
         Button resume = createGameButton("CONTINUE");
@@ -54,9 +59,10 @@ public class GameScene {
         overlay.setPadding(new Insets(40));
         overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.8);");
         overlay.setVisible(false);
-        overlay.setMouseTransparent(true);
+        overlay.setMouseTransparent(!paused);
 
         StackPane root = new StackPane(canvas, overlay);
+        this.root = root; // Сохраняем ссылку
         Scene scene = new Scene(root, W, H, Color.BLACK);
 
         keys.attach(scene);
@@ -77,7 +83,7 @@ public class GameScene {
         });
 
         backToMenu.setOnAction(e -> {
-           SceneController.set(new MainMenuScene().create());
+            SceneController.set(new MainMenuScene().create());
         });
 
         for (int i = 0; i < NUM_STARS; i++) {
@@ -86,8 +92,6 @@ public class GameScene {
             double size = Math.random() * 2 + 0.5;
             stars.add(new double[]{x, y, size});
         }
-
-
 
         spawnEnemies();
 
@@ -103,7 +107,7 @@ public class GameScene {
                 double dt = Math.min((double) (now - prev) / 1_000_000_000, 0.05);
                 prev = now;
 
-                if (!paused) {
+                if (!paused && !isGameOver) {
                     player.update(dt, now, keys, enemies);
 
                     for (Enemy enemy : enemies) {
@@ -113,7 +117,11 @@ public class GameScene {
                     enemyBullet.removeIf(bullet -> !bullet.update(dt));
                     updateEnemyShooting(now);
 
-                    Enemy.moveAllDown(enemies);
+                    long aliveEnemiesCount = enemies.stream()
+                            .filter(Enemy::isAlive)
+                            .count();
+
+                    Enemy.moveAllDown(enemies, (int) aliveEnemiesCount);
 
                     checkCollisionsEnemy();
                     checkGameOver();
@@ -149,43 +157,37 @@ public class GameScene {
         }
     }
 
-    private void increaseEnemyBulletSpeed() {
-        for (Bullet bullet : enemyBullet) {
-            // Увеличиваем скорость существующих пуль
-            if (bullet.getVy() > 0) { // проверяем, что это пуля врага (летит вниз)
-                bullet.setVy(bullet.getVy() * 1.2); // увеличиваем на 20%
-            }
-        }
-    }
 
     private void render(GraphicsContext g) {
         g.setFill(Color.BLACK);
         g.fillRect(0, 0, W, H);
 
-        g.setFill(Color.WHITE);
-        for (double[] star : stars) {
-            double x = star[0];
-            double y = star[1];
-            double size = star[2];
-            g.fillOval(x, y, size, size);
+            // Отрисовка игровых объектов только если игра не завершена
+            g.setFill(Color.WHITE);
+            for (double[] star : stars) {
+                double x = star[0];
+                double y = star[1];
+                double size = star[2];
+                g.fillOval(x, y, size, size);
+            }
+        if (!isGameOver) {
+            for (Enemy enemy : enemies) {
+                enemy.renderEnemy(g);
+                enemy.renderBullets(g);
+            }
+
+            player.render(g);
+
+            g.setFill(Color.LIME);
+            g.setFont(Font.font("Arial", 16));
+            g.fillText("SCORE: " + String.format(String.valueOf(score)), 20, 30);
+            g.fillText("LIVES: " + player.getLives(), W - 100, 30);
+            g.fillText("WAVE: " + wave, W / 2 - 30, 30);
+
+            g.setFill(Color.WHITE);
+            g.setFont(Font.font("Arial", 12));
+            g.fillText("Enemies: " + enemies.size(), 20, H - 20);
         }
-
-        for (Enemy enemy : enemies) {
-            enemy.renderEnemy(g);
-            enemy.renderBullets(g);
-        }
-
-        player.render(g);
-
-        g.setFill(Color.LIME);
-        g.setFont(Font.font("Arial", 16));
-        g.fillText("SCORE: " + String.format(String.valueOf(score)), 20, 30);
-        g.fillText("LIVES: " + player.getLives(), W - 100, 30);
-        g.fillText("WAVE: " + wave, W / 2 - 30, 30);
-
-        g.setFill(Color.WHITE);
-        g.setFont(Font.font("Arial", 12));
-        g.fillText("Enemies: " + enemies.size(), 20, H - 20);
     }
 
     private void spawnEnemies() {
@@ -239,9 +241,55 @@ public class GameScene {
         }
     }
 
+
+    private void gameOver() {
+        isGameOver = true;
+        paused = true;
+
+        Label gameOverLabel = new Label("GAME OVER");
+        gameOverLabel.setFont(Font.font("Arial", FontWeight.BOLD, 36));
+        gameOverLabel.setTextFill(Color.LIME);
+        gameOverLabel.setStyle("-fx-effect: dropshadow(three-pass-box, #00ff00, 10, 0, 0, 0);");
+
+        Button mainMenu = createGameButton("Main Menu");
+        Button retry = createGameButton("Try Again");
+
+        VBox gameOverScene = new VBox(20, gameOverLabel, retry, mainMenu);
+        gameOverScene.setAlignment(Pos.CENTER);
+        gameOverScene.setPadding(new Insets(40));
+        gameOverScene.setStyle("-fx-background-color: rgba(0, 0, 0, 0.8);");
+        gameOverScene.setMouseTransparent(false); // Убедитесь, что панель не прозрачна для мыши
+
+        // Удаляем существующий оверлей game over, если он есть
+        if (this.root != null) {
+            // Удаляем все существующие оверлеи game over
+            this.root.getChildren().removeIf(node -> node instanceof VBox && node != gameOverScene);
+
+            // Добавляем новый оверлей поверх всего
+            this.root.getChildren().add(gameOverScene);
+            gameOverScene.toFront(); // Важно: помещаем поверх всего
+        }
+
+        mainMenu.setOnAction(e -> {
+            SceneController.set(new MainMenuScene().create());
+        });
+
+        retry.setOnAction(e -> {
+            // Перезапуск игры
+            resetGame();
+            // Удаляем gameOverScene из root
+            if (this.root != null) {
+                this.root.getChildren().remove(gameOverScene);
+            }
+            // Сбрасываем состояние паузы
+            paused = false;
+            isGameOver = false;
+        });
+    }
+
     private void checkGameOver() {
         for (Enemy enemy : enemies) {
-            if (enemy.isAlive() && enemy.getY() > H - 150) {
+            if (enemy.isAlive() && enemy.getY() > H - 200) {
                 gameOver();
                 return;
             }
@@ -252,10 +300,14 @@ public class GameScene {
         }
     }
 
-    private void gameOver() {
-        player = new Player(W / 2.0, H - 60);
-        wave = 1;
+
+    private void resetGame(){
+        isGameOver = false;
         score = 0;
+        wave = 1;
+        player = new Player(W / 2.0, H - 80);
+        enemies.clear();
+        enemyBullet.clear();
         spawnEnemies();
     }
 
@@ -273,20 +325,18 @@ public class GameScene {
                         "-fx-font-weight: bold;"
         );
 
-        button.setOnMouseEntered(e -> {
-            button.setStyle(
-                    "-fx-background-color: #003300; " +
-                            "-fx-text-fill: #00ff00; " +
-                            "-fx-border-color: #00ff00; " +
-                            "-fx-border-width: 3px; " +
-                            "-fx-font-family: 'Arial'; " +
-                            "-fx-font-size: 14px; " +
-                            "-fx-font-weight: bold;"
-            );
-        });
+        button.setOnMouseEntered(e -> button.setStyle(
+                "-fx-background-color: #003300; " +
+                        "-fx-text-fill: #00ff00; " +
+                        "-fx-border-color: #00ff00; " +
+                        "-fx-border-width: 3px; " +
+                        "-fx-font-family: 'Arial'; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-font-weight: bold;"
+        ));
 
         button.setOnMouseExited(e -> button.setStyle(
-                    "-fx-background-color: black; " +
+                "-fx-background-color: black; " +
                         "-fx-text-fill: #00ff00; " +
                         "-fx-border-color: #00ff00; " +
                         "-fx-border-width: 2px; " +
