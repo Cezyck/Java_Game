@@ -64,7 +64,10 @@ public class Enemy{
         // Базовая скорость + бонус когда врагов мало
         double baseSpeed = 350;
         double bulletSpeedBonus = 2.2;
-        if (aliveEnemiesCount <= 5){
+        if (aliveEnemiesCount < 5 && aliveEnemiesCount > 1){
+            baseSpeed = baseSpeed * bulletSpeedBonus;
+        } else if (aliveEnemiesCount == 1) {
+            bulletSpeedBonus = 3.3;
             baseSpeed = baseSpeed * bulletSpeedBonus;
         }
 
@@ -92,8 +95,11 @@ public class Enemy{
         double baseSpeed = 65;
         double speedBonus = 2.5;
         double newGlobalVx = baseSpeed;
-        if (enemiesAliveCount <= 10){
+        if (enemiesAliveCount < 11 && enemiesAliveCount > 1){
             newGlobalVx = baseSpeed * speedBonus;
+        } else if (enemiesAliveCount == 1) {
+            double bonus = 4;
+            newGlobalVx = baseSpeed * bonus;
         }
 
         if (globalVx > 0) {
