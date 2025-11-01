@@ -127,7 +127,7 @@ public class Player {
     //проверка на попадание в игрока
     public boolean collidesWith(Bullet Bullet) {
         return Bullet.getX() >= x &&
-                Bullet.getX() <= x + WIDTH-10 &&
+                Bullet.getX() <= x + WIDTH &&
                 Bullet.getY() >= y &&
                 Bullet.getY() <= y + HEIGHT;
     }

@@ -63,7 +63,10 @@ public class Enemy{
 
         // Базовая скорость + бонус когда врагов мало
         double baseSpeed = 350;
-
+        double bulletSpeedBonus = 2.2;
+        if (aliveEnemiesCount <= 5){
+            baseSpeed = baseSpeed * bulletSpeedBonus;
+        }
 
 
         enemyBullet.add(new Bullet(bulletX, bulletY, baseSpeed, color));
@@ -140,6 +143,7 @@ public class Enemy{
         return HEIGHT;
     }
 
+    //проверка на попадание во врага
     public boolean collidesWith(Bullet Bullet) {
         if (!alive) return false;
 

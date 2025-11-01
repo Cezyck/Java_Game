@@ -243,7 +243,6 @@ public class GameScene {
         while (iterator.hasNext()) {
             Bullet bullet = iterator.next();
             if (player.getLives() > 0 && player.collidesWith(bullet)) {
-                System.out.println("Player hit! Lives before: " + player.getLives());
                 iterator.remove(); // Безопасное удаление из списка
                 player.takeDamage();
             }
