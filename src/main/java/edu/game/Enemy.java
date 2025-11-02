@@ -17,6 +17,9 @@ public class Enemy{
     private static double globalVx = 65;
     private static boolean shouldMoveDown = false;
     private static boolean boundaryHitThisFrame = false;
+    private  double movementBaseSpeed;
+    private int wave;
+    private  int aliveEnemyCount;
     private final long SHOOT_DELAY; // 0.7 сек
     private final List<Bullet> enemyBullet;
     private final double shootChance;
@@ -32,12 +35,20 @@ public class Enemy{
         this.enemyBullet = enemyBullet;
     }
 
-    public void update(double dt, double worldW) {
+    public void update(double dt, double worldW, int enemiesAliveCount, int wave) {
         if (!alive) return;
+        //увеличение скорости если врагов <= 10
+        double newGlobalVx = enemySpeed(enemiesAliveCount, wave);
 
+        if (globalVx > 0) {
+            globalVx = newGlobalVx;
+        } else {
+            globalVx = -newGlobalVx;
+        }
         // Обычное горизонтальное движение
         x += globalVx * dt;
 
+        //проверка на удар об границу экрана
         boolean hitBoundary = false;
         if (x < 20) {
             x = 20;
@@ -47,15 +58,16 @@ public class Enemy{
             hitBoundary = true;
         }
 
+        //смена направления врага при ударе об границу
         if (hitBoundary && !boundaryHitThisFrame) {
             boundaryHitThisFrame = true;
             shouldMoveDown = true;
+            globalVx = -globalVx;
         }
-
     }
 
 
-
+    // реализация стрельбы
     public void shoot(int aliveEnemiesCount) {  // Добавляем параметр
         Color color = Color.RED;
         double bulletX = x + (double) WIDTH / 2;
@@ -63,7 +75,7 @@ public class Enemy{
 
         // Базовая скорость + бонус когда врагов мало
         double baseSpeed = 350;
-        double bulletSpeedBonus = 2.2;
+        double bulletSpeedBonus = 2.4;
         if (aliveEnemiesCount < 5 && aliveEnemiesCount > 1){
             baseSpeed = baseSpeed * bulletSpeedBonus;
         } else if (aliveEnemiesCount == 1) {
@@ -81,9 +93,27 @@ public class Enemy{
         }
     }
 
+    //скорость врага
+    public static double enemySpeed(int enemiesAliveCount, int wave ){
+        double baseSpeed = 65;
+        if (wave >= 5){
+            baseSpeed = 155;
+        }
+        double speedBonus = 2.5;
+        double newGlobalVx = baseSpeed;
+        if (enemiesAliveCount < 11 && enemiesAliveCount > 1){
+            newGlobalVx = baseSpeed * speedBonus;
+        } else if (enemiesAliveCount == 1) {
+            speedBonus = 4;
+            newGlobalVx = baseSpeed * speedBonus;
+        }
 
-    // Централизованный спуск всех врагов (Необходим для GameScene)
-    public static void moveAllDown(List<Enemy> enemies, int enemiesAliveCount) {
+        return newGlobalVx;
+    }
+
+
+    // Централизованный спуск всех врагов
+    public static void moveAllDown(List<Enemy> enemies) {
         if (!shouldMoveDown) return;
 
         double descentAmount = 25;
@@ -92,22 +122,6 @@ public class Enemy{
                 enemy.y += descentAmount;
             }
         }
-        double baseSpeed = 65;
-        double speedBonus = 2.5;
-        double newGlobalVx = baseSpeed;
-        if (enemiesAliveCount < 11 && enemiesAliveCount > 1){
-            newGlobalVx = baseSpeed * speedBonus;
-        } else if (enemiesAliveCount == 1) {
-            double bonus = 4;
-            newGlobalVx = baseSpeed * bonus;
-        }
-
-        if (globalVx > 0) {
-            globalVx = -newGlobalVx;
-        } else {
-            globalVx = newGlobalVx;
-        }
-
         shouldMoveDown = false;
         boundaryHitThisFrame = false;
     }
@@ -118,9 +132,15 @@ public class Enemy{
         // вывод изображения противника
         g.drawImage(SPRITE, x, y, WIDTH, HEIGHT);
     }
+    // возвращение всех переменных в исходное состояние для реализации увеличения волны
+    public static void resetGlobalState(int currentWave) {
+        double baseSpeed = 65;
 
-    public static void resetGlobalState() {
-        globalVx = 65;
+        if (currentWave >= 5){
+            baseSpeed = 100;
+        }
+
+        globalVx = baseSpeed;
         shouldMoveDown = false;
         boundaryHitThisFrame = false;
     }

@@ -31,8 +31,6 @@ public class GameScene {
     private static final double W = SceneController.WIDTH;
     private static final double H = SceneController.HEIGHT;
     private long lastEnemyShotTime = 0;
-    private final long ENEMY_SHOOT_INTERVAL = 3_000_000_000L; // 3 секунды между залпами (было 1000)
-    private final int MAX_SHOOTING_ENEMIES = 4;
     private final Keys keys = new Keys();
     private boolean paused = false;
     private  boolean isGameOver = false;
@@ -107,19 +105,17 @@ public class GameScene {
                 if (!paused && !isGameOver) {
                     player.update(dt, now, keys, enemies);
 
-                    for (Enemy enemy : enemies) {
-                        enemy.update(dt, W);
-                    }
-
-                    enemyBullet.removeIf(bullet -> !bullet.update(dt));
-                    updateEnemyShooting(now);
 
                     long aliveEnemiesCount = enemies.stream()
                             .filter(Enemy::isAlive)
                             .count();
+                    for (Enemy enemy : enemies) {
+                        enemy.update(dt, W, (int) aliveEnemiesCount, wave);
+                    }
 
-                    Enemy.moveAllDown(enemies, (int) aliveEnemiesCount);
-
+                    enemyBullet.removeIf(bullet -> !bullet.update(dt));
+                    updateEnemyShooting(now);
+                    Enemy.moveAllDown(enemies);
                     checkCollisionsEnemy();
                     checkCollisionsPlayer();
                     checkGameOver();
@@ -133,6 +129,8 @@ public class GameScene {
     }
 
     private void updateEnemyShooting(long now) {
+        // 3 секунды между выстрелами врагов
+        long ENEMY_SHOOT_INTERVAL = 3_000_000_000L;
         if (now - lastEnemyShotTime >= ENEMY_SHOOT_INTERVAL) {
             List<Enemy> availableEnemies = new ArrayList<>();
             for (Enemy enemy : enemies) {
@@ -145,6 +143,7 @@ public class GameScene {
             int aliveEnemiesCount = availableEnemies.size();
 
             Collections.shuffle(availableEnemies);
+            int MAX_SHOOTING_ENEMIES = 5;
             int enemiesToShoot = Math.min(MAX_SHOOTING_ENEMIES, availableEnemies.size());
 
             for (int i = 0; i < enemiesToShoot; i++) {
@@ -189,7 +188,7 @@ public class GameScene {
     }
 
     private void spawnEnemies() {
-        Enemy.resetGlobalState();
+        Enemy.resetGlobalState(wave);
         enemies.clear();
 
         int rows = 4;
