@@ -4,6 +4,8 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -20,6 +22,7 @@ public class Enemy{
     private static boolean boundaryHitThisFrame = false;
     private  double movementBaseSpeed;
     private int wave;
+    private static long lastEnemyShotTime = 0;
     private  int aliveEnemyCount;
     private final long SHOOT_DELAY;
     private final List<Bullet> enemyBullet;
@@ -66,6 +69,31 @@ public class Enemy{
             globalVx = -globalVx;
         }
     }
+    public static void updateEnemyShooting(long now, List<Enemy> enemies) {
+        // 3 секунды между выстрелами врагов
+        long ENEMY_SHOOT_INTERVAL = 9_000_000_000L;
+        if (now - lastEnemyShotTime >= ENEMY_SHOOT_INTERVAL) {
+            List<Enemy> availableEnemies = new ArrayList<>();
+            for (Enemy enemy : enemies) {
+                if (enemy.isAlive()) {
+                    availableEnemies.add(enemy);
+                }
+            }
+
+            // Считаем количество живых врагов
+            int aliveEnemiesCount = availableEnemies.size();
+
+            Collections.shuffle(availableEnemies);
+            int MAX_SHOOTING_ENEMIES = 5;
+            int enemiesToShoot = Math.min(MAX_SHOOTING_ENEMIES, availableEnemies.size());
+
+            for (int i = 0; i < enemiesToShoot; i++) {
+                availableEnemies.get(i).shoot(aliveEnemiesCount);
+            }
+
+            lastEnemyShotTime = now;
+        }
+    }
 
 
     // реализация стрельбы
@@ -76,11 +104,14 @@ public class Enemy{
 
         // Базовая скорость + бонус когда врагов мало
         double baseSpeed = 350; //базовая скорость врага
-        double bulletSpeedBonus = 2.4; // бонус скорости пули
+        double bulletSpeedBonus = 2.0; // бонус скорости пули
         if (aliveEnemiesCount < 11 && aliveEnemiesCount > 3){
             baseSpeed = baseSpeed * bulletSpeedBonus; // увеличение скорости пули когда врагов 5
-        } else if (aliveEnemiesCount == 3) { //увеличение скорости пули когда враг 1
-            bulletSpeedBonus = 3.3;
+        } else if (aliveEnemiesCount <= 3 && aliveEnemiesCount > 1) { //увеличение скорости пули когда враг 1
+            bulletSpeedBonus = 2.4;
+            baseSpeed = baseSpeed * bulletSpeedBonus;
+        } else if ( aliveEnemiesCount == 1) {
+            bulletSpeedBonus = 2.8;
             baseSpeed = baseSpeed * bulletSpeedBonus;
         }
 
@@ -105,7 +136,10 @@ public class Enemy{
         double newGlobalVx = baseSpeed;
         if (enemiesAliveCount <= 10 && enemiesAliveCount > 3){
             newGlobalVx = baseSpeed * speedBonus;
-        } else if (enemiesAliveCount == 3) {
+        } else if (enemiesAliveCount <= 3 && enemiesAliveCount > 1) {
+            speedBonus = 3.2;
+            newGlobalVx = baseSpeed * speedBonus;
+        }else if (enemiesAliveCount == 1){
             speedBonus = 4;
             newGlobalVx = baseSpeed * speedBonus;
         }
@@ -151,7 +185,7 @@ public class Enemy{
         }
 
         // Удаляем мертвых врагов
-        enemies.removeIf(e -> !e.isAlive());
+        enemies.removeIf(enemy -> !enemy.isAlive());
 
         if (enemies.isEmpty()) {
             wave++;

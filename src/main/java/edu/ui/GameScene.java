@@ -30,12 +30,11 @@ import java.util.List;
 public class GameScene {
     private static final double W = SceneController.WIDTH;
     private static final double H = SceneController.HEIGHT;
-    private long lastEnemyShotTime = 0;
     private final Keys keys = new Keys();
     private boolean paused = false;
     private  boolean isGameOver = false;
     private int score = 0;
-    private int wave = 1;
+    private int wave = 5;
     private final List<double[]> stars = new ArrayList<>();
     private static final int NUM_STARS = 70;
     private Player player = new Player(W / 2.0, H - 80);
@@ -114,7 +113,7 @@ public class GameScene {
                     }
 
                     enemyBullet.removeIf(bullet -> !bullet.update(dt));
-                    updateEnemyShooting(now);
+                    Enemy.updateEnemyShooting(now, enemies);
                     Enemy.moveAllDown(enemies);
                     score = Enemy.checkCollisionsEnemy(enemies, player.getBullets(), wave, score, () -> spawnEnemies());
                     player.checkCollisionsPlayer(enemyBullet);
@@ -127,33 +126,6 @@ public class GameScene {
 
         return scene;
     }
-
-    private void updateEnemyShooting(long now) {
-        // 3 секунды между выстрелами врагов
-        long ENEMY_SHOOT_INTERVAL = 3_000_000_000L;
-        if (now - lastEnemyShotTime >= ENEMY_SHOOT_INTERVAL) {
-            List<Enemy> availableEnemies = new ArrayList<>();
-            for (Enemy enemy : enemies) {
-                if (enemy.isAlive()) {
-                    availableEnemies.add(enemy);
-                }
-            }
-
-            // Считаем количество живых врагов
-            int aliveEnemiesCount = availableEnemies.size();
-
-            Collections.shuffle(availableEnemies);
-            int MAX_SHOOTING_ENEMIES = 5;
-            int enemiesToShoot = Math.min(MAX_SHOOTING_ENEMIES, availableEnemies.size());
-
-            for (int i = 0; i < enemiesToShoot; i++) {
-                availableEnemies.get(i).shoot(aliveEnemiesCount);
-            }
-
-            lastEnemyShotTime = now;
-        }
-    }
-
 
     private void render(GraphicsContext g) {
         g.setFill(Color.BLACK);
@@ -195,7 +167,7 @@ public class GameScene {
         int cols = 5;
         double startX = 50;
         double startY = 80;
-        double spacingX = 70;
+        double spacingX = 75;
         double spacingY = 60;
 
         for (int row = 0; row < rows; row++) {
@@ -235,7 +207,7 @@ public class GameScene {
 
             // Добавляем новый оверлей поверх всего
             this.root.getChildren().add(gameOverScene);
-            gameOverScene.toFront(); // Важно: помещаем поверх всего
+            gameOverScene.toFront();
         }
 
         mainMenu.setOnAction(e -> SceneController.set(new MainMenuScene().create()));
@@ -255,7 +227,7 @@ public class GameScene {
 
     private void checkGameOver() {
         for (Enemy enemy : enemies) {
-            if (enemy.isAlive() && enemy.getY() > H - 200) {
+            if (enemy.isAlive() && enemy.getY() > H - 230) {
                 gameOver();
                 return;
             }

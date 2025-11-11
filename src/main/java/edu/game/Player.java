@@ -46,12 +46,9 @@ public class Player {
         // 🔧 Границы экрана (горизонталь)
         x = Math.max(0, Math.min(x, SceneController.WIDTH - WIDTH));
 
-        // 💡 ИСПРАВЛЕНИЕ: Новая логика ограничения Y (держим корабль под врагами)
         double topBoundary = getTopBoundary(enemies);
 
         // 🔧 Границы экрана (вертикаль)
-        // Игрок не может подняться ВЫШЕ (y < topBoundary)
-        // И не может опуститься НИЖЕ (y > H - HEIGHT)
         y = Math.max(topBoundary, Math.min(y, SceneController.HEIGHT - HEIGHT));
 
         // 🔫 Обновление пуль
@@ -76,10 +73,10 @@ public class Player {
     }
 
     private static double getTopBoundary(List<Enemy> enemies) {
-        double maxEnemyBottomY = 0; // Ищем "дно" самого нижнего живого врага
-        for (Enemy e : enemies) {
-            if (e.isAlive()) { // Если враг жив, учитываем его
-                maxEnemyBottomY = Math.max(maxEnemyBottomY, e.getY() + e.getHeight());
+        double maxEnemyBottomY = 0; // Ищем  самого нижнего живого врага
+        for (Enemy enemy : enemies) {
+            if (enemy.isAlive()) {
+                maxEnemyBottomY = Math.max(maxEnemyBottomY, enemy.getY() + enemy.getHeight());
             }
         }
 
