@@ -28,11 +28,11 @@ public class Bullet {
 
     public boolean update(double dt) {
         y += vy * dt;
-        return !isOffScreen(); // ИСПРАВЛЕНО: возвращаем true, пока пуля активна
+        return !isOffScreen();
     }
 
     public boolean isOffScreen() {
-        return y < -HEIGHT || y > SceneController.HEIGHT; // ИСПРАВЛЕНО: проверяем только верхнюю границу
+        return y < -HEIGHT || y > SceneController.HEIGHT;
     }
 
     public void render(GraphicsContext g) {

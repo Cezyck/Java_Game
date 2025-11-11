@@ -13,14 +13,13 @@ public class Enemy{
     private final int WIDTH = 80;
     private final int HEIGHT = 50;
     private boolean alive = true;
-    // Глобальные параметры
     private static double globalVx = 65;
     private static boolean shouldMoveDown = false;
     private static boolean boundaryHitThisFrame = false;
     private  double movementBaseSpeed;
     private int wave;
     private  int aliveEnemyCount;
-    private final long SHOOT_DELAY; // 0.7 сек
+    private final long SHOOT_DELAY;
     private final List<Bullet> enemyBullet;
     private final double shootChance;
 
@@ -69,16 +68,16 @@ public class Enemy{
 
     // реализация стрельбы
     public void shoot(int aliveEnemiesCount) {  // Добавляем параметр
-        Color color = Color.RED;
-        double bulletX = x + (double) WIDTH / 2;
-        double bulletY = y + HEIGHT;
+        Color color = Color.RED; // цвет пули врага
+        double bulletX = x + (double) WIDTH / 2; // пуля вылетает по центру модельки врага
+        double bulletY = y + HEIGHT; // пуля вылетает с самой низкой точки врага
 
         // Базовая скорость + бонус когда врагов мало
-        double baseSpeed = 350;
-        double bulletSpeedBonus = 2.4;
+        double baseSpeed = 350; //базовая скорость врага
+        double bulletSpeedBonus = 2.4; // бонус скорости пули
         if (aliveEnemiesCount < 5 && aliveEnemiesCount > 1){
-            baseSpeed = baseSpeed * bulletSpeedBonus;
-        } else if (aliveEnemiesCount == 1) {
+            baseSpeed = baseSpeed * bulletSpeedBonus; // увеличение скорости пули когда врагов 5
+        } else if (aliveEnemiesCount == 1) { //увеличение скорости пули когда враг 1
             bulletSpeedBonus = 3.3;
             baseSpeed = baseSpeed * bulletSpeedBonus;
         }
@@ -87,6 +86,7 @@ public class Enemy{
         enemyBullet.add(new Bullet(bulletX, bulletY, baseSpeed, color));
     }
 
+    // рендер пули
     public  void renderenemyBullet(GraphicsContext gc) {
         for (Bullet bullet : enemyBullet){
             bullet.render(gc);
@@ -101,7 +101,7 @@ public class Enemy{
         }
         double speedBonus = 2.5;
         double newGlobalVx = baseSpeed;
-        if (enemiesAliveCount < 11 && enemiesAliveCount > 1){
+        if (enemiesAliveCount <= 10 && enemiesAliveCount > 1){
             newGlobalVx = baseSpeed * speedBonus;
         } else if (enemiesAliveCount == 1) {
             speedBonus = 4;
@@ -126,9 +126,9 @@ public class Enemy{
         boundaryHitThisFrame = false;
     }
 
+    //рендер врага
     public void renderEnemy(GraphicsContext g) {
         if (!alive) return;
-
         // вывод изображения противника
         g.drawImage(SPRITE, x, y, WIDTH, HEIGHT);
     }

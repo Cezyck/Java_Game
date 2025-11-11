@@ -15,7 +15,7 @@ public class Player {
     private double x, y;
     private final double WIDTH = 120;
     private final double HEIGHT = 100;
-    private  int lives = 3;
+    private  int lives = 5;
     private final List<Bullet> bullets = new ArrayList<>();
 
     private long lastShotTime = 0;

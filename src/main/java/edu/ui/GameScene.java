@@ -147,7 +147,7 @@ public class GameScene {
             int enemiesToShoot = Math.min(MAX_SHOOTING_ENEMIES, availableEnemies.size());
 
             for (int i = 0; i < enemiesToShoot; i++) {
-                availableEnemies.get(i).shoot(aliveEnemiesCount); // Передаем количество
+                availableEnemies.get(i).shoot(aliveEnemiesCount);
             }
 
             lastEnemyShotTime = now;
@@ -203,8 +203,8 @@ public class GameScene {
                 double x = startX + col * spacingX;
                 double y = startY + row * spacingY;
                 long delay = 4500 + (long)(Math.random() * 3000);
-                double chance = 0.01 + Math.random() * 0.2;
-                enemies.add(new Enemy(x, y, delay, chance, enemyBullet ));
+                double shootChance = 0.01 + Math.random() * 0.3;
+                enemies.add(new Enemy(x, y, delay, shootChance, enemyBullet ));
             }
         }
     }

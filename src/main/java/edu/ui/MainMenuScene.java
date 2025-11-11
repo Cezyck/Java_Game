@@ -27,22 +27,15 @@ public class MainMenuScene {
 
         // Обработка нажатия на START - переход на игровую сцену
         start.setOnAction(e -> {
-            // Используем reflection или создаем экземпляр через класс
-            try {
-                Class<?> gameSceneClass = Class.forName("edu.ui.GameScene");
-                Scene gameScene = (Scene) gameSceneClass.getDeclaredMethod("create").invoke(gameSceneClass.newInstance());
-                SceneController.set(gameScene);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+            SceneController.set(new GameScene().create());
         });
 
         // Обработка выхода
         exit.setOnAction(e -> System.exit(0));
 
-        // Остальные кнопки (заглушки)
+        //High Score сцены
         highScore.setOnAction(e -> {
-            // Будет реализовано позже
+            SceneController.set(new HighScoreScene().create());
         });
 
         author.setOnAction(e -> {
