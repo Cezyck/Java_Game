@@ -3,6 +3,8 @@ package edu.game;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
+
+import java.util.Iterator;
 import java.util.List;
 
 
@@ -75,9 +77,9 @@ public class Enemy{
         // Базовая скорость + бонус когда врагов мало
         double baseSpeed = 350; //базовая скорость врага
         double bulletSpeedBonus = 2.4; // бонус скорости пули
-        if (aliveEnemiesCount < 5 && aliveEnemiesCount > 1){
+        if (aliveEnemiesCount < 11 && aliveEnemiesCount > 3){
             baseSpeed = baseSpeed * bulletSpeedBonus; // увеличение скорости пули когда врагов 5
-        } else if (aliveEnemiesCount == 1) { //увеличение скорости пули когда враг 1
+        } else if (aliveEnemiesCount == 3) { //увеличение скорости пули когда враг 1
             bulletSpeedBonus = 3.3;
             baseSpeed = baseSpeed * bulletSpeedBonus;
         }
@@ -101,9 +103,9 @@ public class Enemy{
         }
         double speedBonus = 2.5;
         double newGlobalVx = baseSpeed;
-        if (enemiesAliveCount <= 10 && enemiesAliveCount > 1){
+        if (enemiesAliveCount <= 10 && enemiesAliveCount > 3){
             newGlobalVx = baseSpeed * speedBonus;
-        } else if (enemiesAliveCount == 1) {
+        } else if (enemiesAliveCount == 3) {
             speedBonus = 4;
             newGlobalVx = baseSpeed * speedBonus;
         }
@@ -124,6 +126,40 @@ public class Enemy{
         }
         shouldMoveDown = false;
         boundaryHitThisFrame = false;
+    }
+
+    public static int checkCollisionsEnemy(List<Enemy> enemies, List<Bullet> playerBullets, int currentWave, int currentScore, Runnable callBack) {
+        int score = currentScore;
+        int wave = currentWave;
+
+        Iterator<Bullet> bulletIterator = playerBullets.iterator();
+
+        while (bulletIterator.hasNext()) {
+            Bullet bullet = bulletIterator.next();
+            boolean bulletHit = false;
+
+            Iterator<Enemy> enemyIterator = enemies.iterator();
+            while (enemyIterator.hasNext() && !bulletHit) {
+                Enemy enemy = enemyIterator.next();
+                if (enemy.isAlive() && enemy.collidesWith(bullet)) {
+                    bulletIterator.remove(); // Удаляем пулю
+                    enemy.destroy(); // Уничтожаем врага
+                    score += 100;
+                    bulletHit = true; // Пуля попала, выходим из цикла
+                }
+            }
+        }
+
+        // Удаляем мертвых врагов
+        enemies.removeIf(e -> !e.isAlive());
+
+        if (enemies.isEmpty()) {
+            wave++;
+            score += 500;
+            callBack.run();
+        }
+
+        return score;
     }
 
     //рендер врага

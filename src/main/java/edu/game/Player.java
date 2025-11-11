@@ -1,5 +1,6 @@
 package edu.game;
 
+import com.sun.javafx.collections.ElementObservableListDecorator;
 import edu.engine.Keys;
 import edu.engine.SceneController;
 import javafx.scene.canvas.GraphicsContext;
@@ -8,6 +9,7 @@ import javafx.scene.input.KeyCode;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class Player {
@@ -17,7 +19,8 @@ public class Player {
     private final double HEIGHT = 100;
     private  int lives = 5;
     private final List<Bullet> bullets = new ArrayList<>();
-
+    private static  final long Invuln = 500_000_000;
+    private long lastHitAt = 1;
     private long lastShotTime = 0;
     private static final long SHOOT_DELAY = 400_000_000; // 0.4 сек
 
@@ -26,7 +29,7 @@ public class Player {
         this.y = y;
     }
 
-    public void update(double dt, long now, Keys keys, List<Enemy> enemies) {
+    public void update(double dt, long now, Keys keys, List<Enemy> enemies, List<Bullet> enemyBullet) {
         double moveX = 0, moveY = 0;
 
         // 🔧 управление: WASD
@@ -57,6 +60,18 @@ public class Player {
         // 🔫 Стрельба на SPACE
         if (keys.isDown(KeyCode.SPACE)) {
             shoot(now);
+        }
+
+        checkCollisionsPlayer(enemyBullet);
+    }
+    public void checkCollisionsPlayer(List<Bullet> enemyBullet){
+        Iterator<Bullet> iterator = enemyBullet.iterator();
+        while (iterator.hasNext()) {
+            Bullet bullet = iterator.next();
+            if (lives > 0 && collidesWith(bullet)) {
+                iterator.remove();
+                takeDamage();
+            }
         }
     }
 

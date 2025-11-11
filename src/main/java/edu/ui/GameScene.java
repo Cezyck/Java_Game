@@ -90,7 +90,7 @@ public class GameScene {
 
         spawnEnemies();
 
-        AnimationTimer loop = new AnimationTimer() {
+        AnimationTimer gameLoop = new AnimationTimer() {
             long prev = 0;
 
             @Override
@@ -102,8 +102,8 @@ public class GameScene {
                 double dt = Math.min((double) (now - prev) / 1_000_000_000, 0.05);
                 prev = now;
 
-                if (!paused && !isGameOver) {
-                    player.update(dt, now, keys, enemies);
+                if (!paused && !isGameOver && !enemies.isEmpty()) {
+                    player.update(dt, now, keys, enemies, enemyBullet);
 
 
                     long aliveEnemiesCount = enemies.stream()
@@ -116,14 +116,14 @@ public class GameScene {
                     enemyBullet.removeIf(bullet -> !bullet.update(dt));
                     updateEnemyShooting(now);
                     Enemy.moveAllDown(enemies);
-                    checkCollisionsEnemy();
-                    checkCollisionsPlayer();
+                    score = Enemy.checkCollisionsEnemy(enemies, player.getBullets(), wave, score, () -> spawnEnemies());
+                    player.checkCollisionsPlayer(enemyBullet);
                     checkGameOver();
                 }
                 render(g);
             }
         };
-        loop.start();
+        gameLoop.start();
 
         return scene;
     }
@@ -209,44 +209,6 @@ public class GameScene {
         }
     }
 
-    private void checkCollisionsEnemy() {
-        Iterator<Bullet> bulletIterator = player.getBullets().iterator();
-
-        while (bulletIterator.hasNext()) {
-            Bullet bullet = bulletIterator.next();
-            boolean bulletHit = false;
-
-            Iterator<Enemy> enemyIterator = enemies.iterator();
-            while (enemyIterator.hasNext() && !bulletHit) {
-                Enemy enemy = enemyIterator.next();
-                if (enemy.isAlive() && enemy.collidesWith(bullet)) {
-                    bulletIterator.remove(); // Удаляем пулю
-                    enemy.destroy(); // Уничтожаем врага
-                    score += 100;
-                    bulletHit = true; // Пуля попала, выходим из цикла
-                }
-            }
-        }
-
-        // Удаляем мертвых врагов
-        enemies.removeIf(e -> !e.isAlive());
-
-        if (enemies.isEmpty()) {
-            wave++;
-            score += 500;
-            spawnEnemies();
-        }
-    }
-    private void checkCollisionsPlayer(){
-        Iterator<Bullet> iterator = enemyBullet.iterator();
-        while (iterator.hasNext()) {
-            Bullet bullet = iterator.next();
-            if (player.getLives() > 0 && player.collidesWith(bullet)) {
-                iterator.remove(); // Безопасное удаление из списка
-                player.takeDamage();
-            }
-        }
-    }
 
     private void gameOver() {
         isGameOver = true;
