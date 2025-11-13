@@ -117,7 +117,9 @@ public class GameScene {
                     enemyBullet.removeIf(bullet -> !bullet.update(dt));
                     Enemy.updateEnemyShooting(now, enemies, wave);
                     Enemy.moveAllDown(enemies);
-                    score = Enemy.checkCollisionsEnemy(enemies, player.getBullets(), wave, score, () -> spawnEnemies());
+                    int[] results = Enemy.checkCollisionsEnemy(enemies, player.getBullets(), wave, score, () -> spawnEnemies());
+                    score = results[0];
+                    wave = results[1];
                     player.checkCollisionsPlayer(enemyBullet);
                     checkGameOver();
                 }
@@ -176,7 +178,7 @@ public class GameScene {
                 double x = startX + col * spacingX;
                 double y = startY + row * spacingY;
                 long delay = 4500 + (long)(Math.random() * 3000);
-                double shootChance = 0.01 + Math.random() * 0.3;
+                double shootChance = 0.01 + Math.random() * 0.4;
                 enemies.add(new Enemy(x, y, delay, shootChance, enemyBullet ));
             }
         }
@@ -226,19 +228,20 @@ public class GameScene {
                 }
                 HighScoreManager.add(playerName, score);
                 scoreSaved = true;
+                saveButton.setVisible(false);
+                mainMenu.setOnAction(event -> SceneController.set(new MainMenuScene().create()));
+                retry.setOnAction(event -> resetGame());
 
-                // После сохранения показываем обычный экран Game Over
-                showStandardGameOver();
             });
 
             gameOverScene = new VBox(15, gameOverLabel, highScoreLabel, scoreLabel, nameLabel, nameField, saveButton, retry, mainMenu);
         } else {
-            // Обычный экран Game Over
+            // Обычный экран Game Over если не highScore
             Button mainMenu = arcadeButton.createArcadeButton("Main Menu");
             Button retry = arcadeButton.createArcadeButton("Try Again");
 
             mainMenu.setOnAction(e -> SceneController.set(new MainMenuScene().create()));
-            retry.setOnAction(e -> resetGameUI());
+            retry.setOnAction(e -> resetGame());
 
             gameOverScene = new VBox(20, gameOverLabel, scoreLabel, retry, mainMenu);
         }
@@ -254,45 +257,6 @@ public class GameScene {
             gameOverScene.toFront();
         }
     }
-
-    private void showStandardGameOver() {
-        Label gameOverLabel = new Label("GAME OVER");
-        gameOverLabel.setFont(Font.font("Arial", FontWeight.BOLD, 36));
-        gameOverLabel.setTextFill(Color.LIME);
-        gameOverLabel.setStyle("-fx-effect: dropshadow(three-pass-box, #00ff00, 10, 0, 0, 0);");
-
-        Label scoreLabel = new Label("Your Score: " + score);
-        scoreLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
-        scoreLabel.setTextFill(Color.LIME);
-
-        Button mainMenu = arcadeButton.createArcadeButton("Main Menu");
-        Button retry = arcadeButton.createArcadeButton("Try Again");
-
-        mainMenu.setOnAction(e -> SceneController.set(new MainMenuScene().create()));
-        retry.setOnAction(e -> resetGameUI());
-
-        VBox gameOverScene = new VBox(20, gameOverLabel, scoreLabel, retry, mainMenu);
-        gameOverScene.setAlignment(Pos.CENTER);
-        gameOverScene.setPadding(new Insets(40));
-        gameOverScene.setStyle("-fx-background-color: rgba(0, 0, 0, 0.9);");
-        gameOverScene.setMouseTransparent(false);
-
-        if (this.root != null) {
-            this.root.getChildren().removeIf(node -> node instanceof VBox);
-            this.root.getChildren().add(gameOverScene);
-            gameOverScene.toFront();
-        }
-    }
-
-    private void resetGameUI() {
-        if (this.root != null) {
-            this.root.getChildren().removeIf(node -> node instanceof VBox);
-        }
-        resetGame();
-        paused = false;
-        isGameOver = false;
-    }
-
     private void checkGameOver() {
         for (Enemy enemy : enemies) {
             if (enemy.isAlive() && enemy.getY() > H - 250) {
@@ -305,8 +269,10 @@ public class GameScene {
             gameOver();
         }
     }
-
     private void resetGame(){
+        if (this.root != null) {
+            this.root.getChildren().removeIf(node -> node instanceof VBox);
+        }
         isGameOver = false;
         score = 0;
         wave = 1;
@@ -316,9 +282,5 @@ public class GameScene {
         spawnEnemies();
         paused = false;
         scoreSaved = false; // Сбрасываем флаг сохранения
-    }
-
-    public int getScore() {
-        return score;
     }
 }

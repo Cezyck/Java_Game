@@ -4,6 +4,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -17,7 +18,7 @@ public class Enemy{
     private final int WIDTH = 80;
     private final int HEIGHT = 50;
     private boolean alive = true;
-    private static double globalVx = 65;
+    private static double globalVx = 80;
     private static boolean shouldMoveDown = false;
     private static boolean boundaryHitThisFrame = false;
     private static long lastEnemyShotTime = 0;
@@ -80,11 +81,9 @@ public class Enemy{
             int aliveEnemiesCount = availableEnemies.size();
 
             Collections.shuffle(availableEnemies);
-            int MAX_SHOOTING_ENEMIES = 4;
+            int MAX_SHOOTING_ENEMIES = 5;
 
-            if (wave >= 5 ) {
-                MAX_SHOOTING_ENEMIES = 6;
-            }
+            if (wave >= 5 ) MAX_SHOOTING_ENEMIES = 8;
             int enemiesToShoot = Math.min(MAX_SHOOTING_ENEMIES, availableEnemies.size());
 
             for (int i = 0; i < enemiesToShoot; i++) {
@@ -127,7 +126,7 @@ public class Enemy{
 
     //скорость врага
     public static double enemySpeed(int enemiesAliveCount, int wave ){
-        double baseSpeed = 65;
+        double baseSpeed = 80;
         if (wave >= 5){
             baseSpeed = 125;
         }
@@ -161,7 +160,7 @@ public class Enemy{
         boundaryHitThisFrame = false;
     }
 
-    public static int checkCollisionsEnemy(List<Enemy> enemies, List<Bullet> playerBullets, int currentWave, int currentScore, Runnable callBack) {
+    public static int[] checkCollisionsEnemy(List<Enemy> enemies, List<Bullet> playerBullets, int currentWave, int currentScore, Runnable callBack) {
         int score = currentScore;
         int wave = currentWave;
 
@@ -186,13 +185,14 @@ public class Enemy{
         // Удаляем мертвых врагов
         enemies.removeIf(enemy -> !enemy.isAlive());
 
+
         if (enemies.isEmpty()) {
             wave++;
             score += 500;
             callBack.run();
         }
 
-        return score;
+      return  new int[]{score, wave};
     }
 
     //рендер врага
@@ -203,7 +203,7 @@ public class Enemy{
     }
     // возвращение всех переменных в исходное состояние для реализации увеличения волны
     public static void resetGlobalState(int currentWave) {
-        double baseSpeed = 65;
+        double baseSpeed = 80;
 
         if (currentWave >= 5){
             baseSpeed = 125;

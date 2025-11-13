@@ -23,7 +23,7 @@ public class Player {
     // Новые поля для неуязвимости и мерцания
     private boolean isInvulnerable = false;
     private long invulnerabilityStartTime = 0;
-    private static final long INVULNERABILITY_DURATION = 600_000_000; // 0.6 секунды в наносекундах
+    private static final long INVULNERABILITY_DURATION = 700_000_000; // 0.6 секунды в наносекундах
     private boolean isVisible = true; // для мерцания
     private long lastBlinkTime = 0;
     private static final long BLINK_INTERVAL = 100_000_000; // 100ms между мерцаниями
