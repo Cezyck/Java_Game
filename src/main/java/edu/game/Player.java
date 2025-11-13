@@ -1,13 +1,11 @@
 package edu.game;
 
-import com.sun.javafx.collections.ElementObservableListDecorator;
 import edu.engine.Keys;
 import edu.engine.SceneController;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -17,10 +15,18 @@ public class Player {
     private double x, y;
     private final double WIDTH = 120;
     private final double HEIGHT = 100;
-    private  int lives = 5;
+    private int lives = 5;
     private final List<Bullet> bullets = new ArrayList<>();
     private long lastShotTime = 0;
     private static final long SHOOT_DELAY = 400_000_000; // 0.4 сек
+
+    // Новые поля для неуязвимости и мерцания
+    private boolean isInvulnerable = false;
+    private long invulnerabilityStartTime = 0;
+    private static final long INVULNERABILITY_DURATION = 600_000_000; // 0.6 секунды в наносекундах
+    private boolean isVisible = true; // для мерцания
+    private long lastBlinkTime = 0;
+    private static final long BLINK_INTERVAL = 100_000_000; // 100ms между мерцаниями
 
     public Player(double x, double y) {
         this.x = x;
@@ -28,6 +34,9 @@ public class Player {
     }
 
     public void update(double dt, long now, Keys keys, List<Enemy> enemies, List<Bullet> enemyBullet) {
+        // Обновление состояния неуязвимости и мерцания
+        updateInvulnerability(now);
+
         double moveX = 0, moveY = 0;
 
         // 🔧 управление: WASD
@@ -57,9 +66,30 @@ public class Player {
             shoot(now);
         }
 
-        checkCollisionsPlayer(enemyBullet);
     }
-    public void checkCollisionsPlayer(List<Bullet> enemyBullet){
+
+    private void updateInvulnerability(long now) {
+        if (isInvulnerable) {
+            // Проверяем, закончился ли период неуязвимости
+            if (now - invulnerabilityStartTime >= INVULNERABILITY_DURATION) {
+                isInvulnerable = false;
+                isVisible = true;
+            } else {
+                // Мерцание: переключаем видимость каждые BLINK_INTERVAL
+                if (now - lastBlinkTime >= BLINK_INTERVAL) {
+                    isVisible = !isVisible;
+                    lastBlinkTime = now;
+                }
+            }
+        }
+    }
+
+    public void checkCollisionsPlayer(List<Bullet> enemyBullet) {
+        // Если игрок неуязвим - пропускаем проверку столкновений
+        if (isInvulnerable) {
+            return;
+        }
+
         Iterator<Bullet> iterator = enemyBullet.iterator();
         while (iterator.hasNext()) {
             Bullet bullet = iterator.next();
@@ -92,18 +122,31 @@ public class Player {
         }
     }
 
-    public  void takeDamage(){
-        if(lives > 0){
+    public void takeDamage() {
+        if (lives > 0 && !isInvulnerable) {
             lives--;
+
+            // Активируем неуязвимость после получения урона
+            if (lives > 0) { // Только если игрок еще жив
+                activateInvulnerability();
+            }
         }
     }
 
+    private void activateInvulnerability() {
+        isInvulnerable = true;
+        invulnerabilityStartTime = System.nanoTime();
+        isVisible = true; // Начинаем с видимого состояния
+        lastBlinkTime = System.nanoTime();
+    }
 
     public void render(GraphicsContext g) {
-        // Добавление изображения
-        g.drawImage(SPRITE, x, y, WIDTH, HEIGHT);
+        // Отрисовываем игрока только если он видим (для эффекта мерцания)
+        if (isVisible) {
+            g.drawImage(SPRITE, x, y, WIDTH, HEIGHT);
+        }
 
-        // Отрисовка пуль остается
+        // Отрисовка пуль
         for (Bullet b : bullets) b.render(g);
     }
 
@@ -134,12 +177,12 @@ public class Player {
     public double getY() {
         return y;
     }
-    //проверка на попадание в игрока
-    public boolean collidesWith(Bullet Bullet) {
-        return Bullet.getX() >= x &&
-                Bullet.getX() <= x + WIDTH &&
-                Bullet.getY() >= y &&
-                Bullet.getY() <= y + HEIGHT;
-    }
 
+    // Проверка на попадание в игрока
+    public boolean collidesWith(Bullet bullet) {
+        return bullet.getX() >= x &&
+                bullet.getX() <= x + WIDTH &&
+                bullet.getY() >= y &&
+                bullet.getY() <= y + HEIGHT;
+    }
 }
