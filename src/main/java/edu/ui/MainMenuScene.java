@@ -12,6 +12,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
 public class MainMenuScene {
+    private final ArcadeButton arcadeButton = new ArcadeButton();
     public Scene create(){
         // Стилизованный заголовок
         Label title = new Label("SPACE INVADERS");
@@ -20,10 +21,10 @@ public class MainMenuScene {
         title.setStyle("-fx-effect: dropshadow(three-pass-box, #00ff00, 10, 0, 0, 0);");
 
         // Кнопки в стиле ретро-аркады
-        Button start = createArcadeButton("START GAME");
-        Button highScore = createArcadeButton("HIGH SCORE");
-        Button author = createArcadeButton("AUTHORS");
-        Button exit = createArcadeButton("EXIT");
+        Button start = arcadeButton.createArcadeButton("START GAME");
+        Button highScore = arcadeButton.createArcadeButton("HIGH SCORE");
+        Button author = arcadeButton.createArcadeButton("AUTHORS");
+        Button exit = arcadeButton.createArcadeButton("EXIT");
 
         // Обработка нажатия на START - переход на игровую сцену
         start.setOnAction(e -> {
@@ -51,52 +52,5 @@ public class MainMenuScene {
         scene.setFill(Color.BLACK);
 
         return scene;
-    }
-
-    private Button createArcadeButton(String text) {
-        Button button = new Button(text);
-        button.setMaxWidth(Double.MAX_VALUE);
-        button.setPrefHeight(50);
-
-        // Стиль в духе аркадных автоматов
-        button.setStyle(
-                "-fx-background-color: black; " +
-                        "-fx-text-fill: #00ff00; " +
-                        "-fx-border-color: #00ff00; " +
-                        "-fx-border-width: 2px; " +
-                        "-fx-font-family: 'Arial'; " +
-                        "-fx-font-size: 16px; " +
-                        "-fx-font-weight: bold; " +
-                        "-fx-effect: dropshadow(three-pass-box, #00ff00, 5, 0, 0, 0);"
-        );
-
-        // Эффекты при наведении
-        button.setOnMouseEntered(e -> {
-            button.setStyle(
-                    "-fx-background-color: #003300; " +
-                            "-fx-text-fill: #00ff00; " +
-                            "-fx-border-color: #00ff00; " +
-                            "-fx-border-width: 3px; " +
-                            "-fx-font-family: 'Arial'; " +
-                            "-fx-font-size: 16px; " +
-                            "-fx-font-weight: bold; " +
-                            "-fx-effect: dropshadow(three-pass-box, #00ff00, 8, 0, 0, 0);"
-            );
-        });
-
-        button.setOnMouseExited(e -> {
-            button.setStyle(
-                    "-fx-background-color: black; " +
-                            "-fx-text-fill: #00ff00; " +
-                            "-fx-border-color: #00ff00; " +
-                            "-fx-border-width: 2px; " +
-                            "-fx-font-family: 'Arial'; " +
-                            "-fx-font-size: 16px; " +
-                            "-fx-font-weight: bold; " +
-                            "-fx-effect: dropshadow(three-pass-box, #00ff00, 5, 0, 0, 0);"
-            );
-        });
-
-        return button;
     }
 }

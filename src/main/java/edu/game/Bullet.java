@@ -9,7 +9,7 @@ public class Bullet {
     private double y;
     private double vy;
     private final int WIDTH = 4;
-    private final int HEIGHT = 17;
+    private final int HEIGHT = 15;
     private final Color color;
 
     public Bullet(double x, double y, double vy) {
@@ -53,19 +53,4 @@ public class Bullet {
         return y;
     }
 
-    public int getWidth() {
-        return WIDTH;
-    }
-
-    public double getVy() {
-        return vy;
-    }
-
-    public void setVy(double vy) {
-        this.vy = vy;
-    }
-
-    public int getHeight() {
-        return HEIGHT;
-    }
 }

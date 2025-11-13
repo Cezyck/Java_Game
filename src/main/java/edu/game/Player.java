@@ -19,8 +19,6 @@ public class Player {
     private final double HEIGHT = 100;
     private  int lives = 5;
     private final List<Bullet> bullets = new ArrayList<>();
-    private static  final long Invuln = 500_000_000;
-    private long lastHitAt = 1;
     private long lastShotTime = 0;
     private static final long SHOOT_DELAY = 400_000_000; // 0.4 сек
 
@@ -39,7 +37,7 @@ public class Player {
         if (keys.isDown(KeyCode.S)) moveY += 1;
 
         // ➡️ Движение
-        double speed = 250;
+        double speed = 275;
         x += moveX * speed * dt;
         y += moveY * speed * dt;
 
@@ -73,7 +71,7 @@ public class Player {
     }
 
     private static double getTopBoundary(List<Enemy> enemies) {
-        double maxEnemyBottomY = 0; // Ищем  самого нижнего живого врага
+        double maxEnemyBottomY = 0; // Ищем самого нижнего живого врага
         for (Enemy enemy : enemies) {
             if (enemy.isAlive()) {
                 maxEnemyBottomY = Math.max(maxEnemyBottomY, enemy.getY() + enemy.getHeight());
@@ -89,7 +87,7 @@ public class Player {
     private void shoot(long now) {
         if (now - lastShotTime > SHOOT_DELAY) {
             // Передаем отрицательную скорость (-600) для полета вверх
-            bullets.add(new Bullet(x + WIDTH / 2 - 2, y - 10, -600));
+            bullets.add(new Bullet(x + WIDTH / 2, y - 5, -600));
             lastShotTime = now;
         }
     }

@@ -20,8 +20,6 @@ public class Enemy{
     private static double globalVx = 65;
     private static boolean shouldMoveDown = false;
     private static boolean boundaryHitThisFrame = false;
-    private  double movementBaseSpeed;
-    private int wave;
     private static long lastEnemyShotTime = 0;
     private  int aliveEnemyCount;
     private final long SHOOT_DELAY;
@@ -44,11 +42,9 @@ public class Enemy{
         //увеличение скорости если врагов <= 10
         double newGlobalVx = enemySpeed(enemiesAliveCount, wave);
 
-        if (globalVx > 0) {
-            globalVx = newGlobalVx;
-        } else {
-            globalVx = -newGlobalVx;
-        }
+        double currentSpeed = globalVx > 0 ?
+                Math.abs(globalVx) :
+                -Math.abs(globalVx);
         // Обычное горизонтальное движение
         x += globalVx * dt;
 
@@ -69,9 +65,9 @@ public class Enemy{
             globalVx = -globalVx;
         }
     }
-    public static void updateEnemyShooting(long now, List<Enemy> enemies) {
+    public static void updateEnemyShooting(long now, List<Enemy> enemies, int wave) {
         // 3 секунды между выстрелами врагов
-        long ENEMY_SHOOT_INTERVAL = 9_000_000_000L;
+        long ENEMY_SHOOT_INTERVAL = 5_000_000_000L;
         if (now - lastEnemyShotTime >= ENEMY_SHOOT_INTERVAL) {
             List<Enemy> availableEnemies = new ArrayList<>();
             for (Enemy enemy : enemies) {
@@ -84,7 +80,11 @@ public class Enemy{
             int aliveEnemiesCount = availableEnemies.size();
 
             Collections.shuffle(availableEnemies);
-            int MAX_SHOOTING_ENEMIES = 5;
+            int MAX_SHOOTING_ENEMIES = 4;
+
+            if (wave >= 5 ) {
+                MAX_SHOOTING_ENEMIES = 6;
+            }
             int enemiesToShoot = Math.min(MAX_SHOOTING_ENEMIES, availableEnemies.size());
 
             for (int i = 0; i < enemiesToShoot; i++) {
@@ -97,26 +97,25 @@ public class Enemy{
 
 
     // реализация стрельбы
-    public void shoot(int aliveEnemiesCount) {  // Добавляем параметр
+    public void shoot(int aliveEnemiesCount) {
+        double baseSpeed = 325;
         Color color = Color.RED; // цвет пули врага
         double bulletX = x + (double) WIDTH / 2; // пуля вылетает по центру модельки врага
         double bulletY = y + HEIGHT; // пуля вылетает с самой низкой точки врага
 
         // Базовая скорость + бонус когда врагов мало
-        double baseSpeed = 350; //базовая скорость врага
-        double bulletSpeedBonus = 2.0; // бонус скорости пули
+        double bulletSpeedBonus = 1.0; // бонус скорости пули
         if (aliveEnemiesCount < 11 && aliveEnemiesCount > 3){
-            baseSpeed = baseSpeed * bulletSpeedBonus; // увеличение скорости пули когда врагов 5
+             bulletSpeedBonus = 1.5;// увеличение скорости пули когда врагов 5
         } else if (aliveEnemiesCount <= 3 && aliveEnemiesCount > 1) { //увеличение скорости пули когда враг 1
-            bulletSpeedBonus = 2.4;
-            baseSpeed = baseSpeed * bulletSpeedBonus;
+            bulletSpeedBonus = 2.0;
         } else if ( aliveEnemiesCount == 1) {
-            bulletSpeedBonus = 2.8;
-            baseSpeed = baseSpeed * bulletSpeedBonus;
+            bulletSpeedBonus = 2.2;
         }
+        
+        double newSpeed = baseSpeed * bulletSpeedBonus;
 
-
-        enemyBullet.add(new Bullet(bulletX, bulletY, baseSpeed, color));
+        enemyBullet.add(new Bullet(bulletX, bulletY, newSpeed, color));
     }
 
     // рендер пули
@@ -130,21 +129,21 @@ public class Enemy{
     public static double enemySpeed(int enemiesAliveCount, int wave ){
         double baseSpeed = 65;
         if (wave >= 5){
-            baseSpeed = 155;
+            baseSpeed = 125;
         }
-        double speedBonus = 2.5;
-        double newGlobalVx = baseSpeed;
+        double speedBonus = 1.0;
         if (enemiesAliveCount <= 10 && enemiesAliveCount > 3){
-            newGlobalVx = baseSpeed * speedBonus;
+            speedBonus = 2.3;
         } else if (enemiesAliveCount <= 3 && enemiesAliveCount > 1) {
             speedBonus = 3.2;
-            newGlobalVx = baseSpeed * speedBonus;
         }else if (enemiesAliveCount == 1){
             speedBonus = 4;
-            newGlobalVx = baseSpeed * speedBonus;
         }
 
-        return newGlobalVx;
+        double newSpeed = baseSpeed * speedBonus;
+        globalVx = globalVx > 0 ? newSpeed : -newSpeed;
+
+        return globalVx;
     }
 
 
@@ -207,7 +206,7 @@ public class Enemy{
         double baseSpeed = 65;
 
         if (currentWave >= 5){
-            baseSpeed = 100;
+            baseSpeed = 125;
         }
 
         globalVx = baseSpeed;

@@ -2,6 +2,7 @@ package edu.ui;
 
 import edu.engine.Keys;
 import edu.engine.SceneController;
+import edu.engine.HighScoreManager;
 import edu.game.Bullet;
 import edu.game.Enemy;
 import edu.game.Player;
@@ -13,6 +14,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
@@ -22,8 +24,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 
@@ -34,21 +34,23 @@ public class GameScene {
     private boolean paused = false;
     private  boolean isGameOver = false;
     private int score = 0;
-    private int wave = 5;
+    private int wave = 1;
     private final List<double[]> stars = new ArrayList<>();
-    private static final int NUM_STARS = 70;
+    private static final int NUM_STARS = 100;
     private Player player = new Player(W / 2.0, H - 80);
     private final List<Enemy> enemies = new ArrayList<>();
     private final List<Bullet> enemyBullet = new ArrayList<>();
     private StackPane root; // Ссылка на корневой элемент
+    private final ArcadeButton arcadeButton = new ArcadeButton();
+    private boolean scoreSaved = false;
 
     public Scene create() {
         Canvas canvas = new Canvas(W, H);
         canvas.setMouseTransparent(true);
         GraphicsContext g = canvas.getGraphicsContext2D();
 
-        Button resume = createGameButton("CONTINUE");
-        Button backToMenu = createGameButton("MAIN MENU");
+        Button resume = arcadeButton.createArcadeButton("CONTINUE");
+        Button backToMenu = arcadeButton.createArcadeButton("MAIN MENU");
 
         VBox overlay = new VBox(20, resume, backToMenu);
         overlay.setAlignment(Pos.CENTER);
@@ -57,7 +59,7 @@ public class GameScene {
         overlay.setVisible(false);
         overlay.setMouseTransparent(!paused);
 
-        StackPane root = new StackPane(canvas, overlay);
+        StackPane root = new StackPane(canvas, overlay );
         this.root = root; // Сохраняем ссылку
         Scene scene = new Scene(root, W, H, Color.BLACK);
 
@@ -104,16 +106,16 @@ public class GameScene {
                 if (!paused && !isGameOver && !enemies.isEmpty()) {
                     player.update(dt, now, keys, enemies, enemyBullet);
 
-
-                    long aliveEnemiesCount = enemies.stream()
+                    long  aliveEnemiesCount = enemies.stream()
                             .filter(Enemy::isAlive)
                             .count();
+                    Enemy.enemySpeed((int) aliveEnemiesCount, wave);
                     for (Enemy enemy : enemies) {
                         enemy.update(dt, W, (int) aliveEnemiesCount, wave);
                     }
 
                     enemyBullet.removeIf(bullet -> !bullet.update(dt));
-                    Enemy.updateEnemyShooting(now, enemies);
+                    Enemy.updateEnemyShooting(now, enemies, wave);
                     Enemy.moveAllDown(enemies);
                     score = Enemy.checkCollisionsEnemy(enemies, player.getBullets(), wave, score, () -> spawnEnemies());
                     player.checkCollisionsPlayer(enemyBullet);
@@ -131,14 +133,13 @@ public class GameScene {
         g.setFill(Color.BLACK);
         g.fillRect(0, 0, W, H);
 
-            // Отрисовка игровых объектов только если игра не завершена
-            g.setFill(Color.WHITE);
-            for (double[] star : stars) {
-                double x = star[0];
-                double y = star[1];
-                double size = star[2];
-                g.fillOval(x, y, size, size);
-            }
+        g.setFill(Color.WHITE);
+        for (double[] star : stars) {
+            double x = star[0];
+            double y = star[1];
+            double size = star[2];
+            g.fillOval(x, y, size, size);
+        }
         if (!isGameOver) {
             for (Enemy enemy : enemies) {
                 enemy.renderEnemy(g);
@@ -181,53 +182,120 @@ public class GameScene {
         }
     }
 
-
     private void gameOver() {
         isGameOver = true;
         paused = true;
+
+        // Проверяем, является ли результат рекордным
+        boolean isHighScore = HighScoreManager.isHighScore(score);
 
         Label gameOverLabel = new Label("GAME OVER");
         gameOverLabel.setFont(Font.font("Arial", FontWeight.BOLD, 36));
         gameOverLabel.setTextFill(Color.LIME);
         gameOverLabel.setStyle("-fx-effect: dropshadow(three-pass-box, #00ff00, 10, 0, 0, 0);");
 
-        Button mainMenu = createGameButton("Main Menu");
-        Button retry = createGameButton("Try Again");
+        Label scoreLabel = new Label("Your Score: " + score);
+        scoreLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        scoreLabel.setTextFill(Color.LIME);
 
-        VBox gameOverScene = new VBox(20, gameOverLabel, retry, mainMenu);
+        VBox gameOverScene;
+
+        if (isHighScore && !scoreSaved) {
+            // Если результат рекордный - показываем поле для ввода имени
+            Label highScoreLabel = new Label("NEW HIGH SCORE!");
+            highScoreLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+            highScoreLabel.setTextFill(Color.YELLOW);
+
+            Label nameLabel = new Label("Enter your name:");
+            nameLabel.setFont(Font.font("Arial", 16));
+            nameLabel.setTextFill(Color.LIME);
+
+            TextField nameField = new TextField();
+            nameField.setMaxWidth(200);
+            nameField.setStyle("-fx-background-color: black; -fx-text-fill: lime; -fx-border-color: lime;");
+            nameField.setPromptText("Player");
+
+            Button saveButton = arcadeButton.createArcadeButton("Save Score");
+            Button mainMenu = arcadeButton.createArcadeButton("Main Menu");
+            Button retry = arcadeButton.createArcadeButton("Try Again");
+
+            saveButton.setOnAction(e -> {
+                String playerName = nameField.getText().trim();
+                if (playerName.isEmpty()) {
+                    playerName = "Player";
+                }
+                HighScoreManager.add(playerName, score);
+                scoreSaved = true;
+
+                // После сохранения показываем обычный экран Game Over
+                showStandardGameOver();
+            });
+
+            gameOverScene = new VBox(15, gameOverLabel, highScoreLabel, scoreLabel, nameLabel, nameField, saveButton, retry, mainMenu);
+        } else {
+            // Обычный экран Game Over
+            Button mainMenu = arcadeButton.createArcadeButton("Main Menu");
+            Button retry = arcadeButton.createArcadeButton("Try Again");
+
+            mainMenu.setOnAction(e -> SceneController.set(new MainMenuScene().create()));
+            retry.setOnAction(e -> resetGameUI());
+
+            gameOverScene = new VBox(20, gameOverLabel, scoreLabel, retry, mainMenu);
+        }
+
         gameOverScene.setAlignment(Pos.CENTER);
         gameOverScene.setPadding(new Insets(40));
-        gameOverScene.setStyle("-fx-background-color: rgba(0, 0, 0, 0.8);");
-        gameOverScene.setMouseTransparent(false); // Убедитесь, что панель не прозрачна для мыши
+        gameOverScene.setStyle("-fx-background-color: rgba(0, 0, 0, 0.9);");
+        gameOverScene.setMouseTransparent(false);
 
-        // Удаляем существующий оверлей game over, если он есть
         if (this.root != null) {
-            // Удаляем все существующие оверлеи game over
-            this.root.getChildren().removeIf(node -> node instanceof VBox && node != gameOverScene);
-
-            // Добавляем новый оверлей поверх всего
+            this.root.getChildren().removeIf(node -> node instanceof VBox);
             this.root.getChildren().add(gameOverScene);
             gameOverScene.toFront();
         }
+    }
+
+    private void showStandardGameOver() {
+        Label gameOverLabel = new Label("GAME OVER");
+        gameOverLabel.setFont(Font.font("Arial", FontWeight.BOLD, 36));
+        gameOverLabel.setTextFill(Color.LIME);
+        gameOverLabel.setStyle("-fx-effect: dropshadow(three-pass-box, #00ff00, 10, 0, 0, 0);");
+
+        Label scoreLabel = new Label("Your Score: " + score);
+        scoreLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        scoreLabel.setTextFill(Color.LIME);
+
+        Button mainMenu = arcadeButton.createArcadeButton("Main Menu");
+        Button retry = arcadeButton.createArcadeButton("Try Again");
 
         mainMenu.setOnAction(e -> SceneController.set(new MainMenuScene().create()));
+        retry.setOnAction(e -> resetGameUI());
 
-        retry.setOnAction(e -> {
-            // Перезапуск игры
-            resetGame();
-            // Удаляем gameOverScene из root
-            if (this.root != null) {
-                this.root.getChildren().remove(gameOverScene);
-            }
-            // Сбрасываем состояние паузы
-            paused = false;
-            isGameOver = false;
-        });
+        VBox gameOverScene = new VBox(20, gameOverLabel, scoreLabel, retry, mainMenu);
+        gameOverScene.setAlignment(Pos.CENTER);
+        gameOverScene.setPadding(new Insets(40));
+        gameOverScene.setStyle("-fx-background-color: rgba(0, 0, 0, 0.9);");
+        gameOverScene.setMouseTransparent(false);
+
+        if (this.root != null) {
+            this.root.getChildren().removeIf(node -> node instanceof VBox);
+            this.root.getChildren().add(gameOverScene);
+            gameOverScene.toFront();
+        }
+    }
+
+    private void resetGameUI() {
+        if (this.root != null) {
+            this.root.getChildren().removeIf(node -> node instanceof VBox);
+        }
+        resetGame();
+        paused = false;
+        isGameOver = false;
     }
 
     private void checkGameOver() {
         for (Enemy enemy : enemies) {
-            if (enemy.isAlive() && enemy.getY() > H - 230) {
+            if (enemy.isAlive() && enemy.getY() > H - 250) {
                 gameOver();
                 return;
             }
@@ -238,7 +306,6 @@ public class GameScene {
         }
     }
 
-
     private void resetGame(){
         isGameOver = false;
         score = 0;
@@ -248,42 +315,10 @@ public class GameScene {
         enemyBullet.clear();
         spawnEnemies();
         paused = false;
+        scoreSaved = false; // Сбрасываем флаг сохранения
     }
 
-    private Button createGameButton(String text) {
-        Button button = new Button(text);
-        button.setPrefWidth(200);
-        button.setPrefHeight(40);
-        button.setStyle(
-                "-fx-background-color: black; " +
-                        "-fx-text-fill: #00ff00; " +
-                        "-fx-border-color: #00ff00; " +
-                        "-fx-border-width: 2px; " +
-                        "-fx-font-family: 'Arial'; " +
-                        "-fx-font-size: 14px; " +
-                        "-fx-font-weight: bold;"
-        );
-
-        button.setOnMouseEntered(e -> button.setStyle(
-                "-fx-background-color: #003300; " +
-                        "-fx-text-fill: #00ff00; " +
-                        "-fx-border-color: #00ff00; " +
-                        "-fx-border-width: 3px; " +
-                        "-fx-font-family: 'Arial'; " +
-                        "-fx-font-size: 14px; " +
-                        "-fx-font-weight: bold;"
-        ));
-
-        button.setOnMouseExited(e -> button.setStyle(
-                "-fx-background-color: black; " +
-                        "-fx-text-fill: #00ff00; " +
-                        "-fx-border-color: #00ff00; " +
-                        "-fx-border-width: 2px; " +
-                        "-fx-font-family: 'Arial'; " +
-                        "-fx-font-size: 14px; " +
-                        "-fx-font-weight: bold;"
-        ));
-
-        return button;
+    public int getScore() {
+        return score;
     }
 }

@@ -22,8 +22,11 @@ public class AuthorScene {
         Label authorInfo = new Label(
                 """
                         🎮 SPACE EVADERS 🎮
+                        
+                        
                         🌟 Developer:
                            Kirilkin Maksim IT-СИП-23-24-JAVA
+                      
                       
                         💻 Stack:
                            Java • JavaFX • OOP • Maven
