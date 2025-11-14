@@ -9,9 +9,12 @@ import javafx.scene.input.KeyCode;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 public class Player {
-    private static final Image SPRITE = new Image("/Models/player-ship.png");
+    private static final Image SPRITE =new Image(
+            Objects.requireNonNull(Player.class.getResource("/Models/player-ship.png")).toString()
+    );
     private double x, y;
     private final double WIDTH = 120;
     private final double HEIGHT = 100;
@@ -23,7 +26,7 @@ public class Player {
     // Новые поля для неуязвимости и мерцания
     private boolean isInvulnerable = false;
     private long invulnerabilityStartTime = 0;
-    private static final long INVULNERABILITY_DURATION = 700_000_000; // 0.6 секунды в наносекундах
+    private static final long INVULNERABILITY_DURATION = 1_000_000_000; // 0.6 секунды в наносекундах
     private boolean isVisible = true; // для мерцания
     private long lastBlinkTime = 0;
     private static final long BLINK_INTERVAL = 100_000_000; // 100ms между мерцаниями

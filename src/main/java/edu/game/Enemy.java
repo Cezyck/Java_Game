@@ -5,14 +5,13 @@ import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 
 public class Enemy{
-    private static final Image SPRITE = new Image("/Models/alien.png");
+    private static final Image SPRITE = new Image(
+            Objects.requireNonNull(Enemy.class.getResource("/Models/Alien.png")).toString()
+    );
     private double x;
     private double y;
     private final int WIDTH = 80;

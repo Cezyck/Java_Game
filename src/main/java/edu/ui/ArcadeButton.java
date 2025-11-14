@@ -8,16 +8,18 @@ public class ArcadeButton {
         button.setMaxWidth(Double.MAX_VALUE);
         button.setPrefHeight(50);
 
-        // Стиль в духе аркадных автоматов
+        // Основной стиль с внутренней тенью
         button.setStyle(
                 "-fx-background-color: black; " +
                         "-fx-text-fill: #00ff00; " +
                         "-fx-border-color: #00ff00; " +
-                        "-fx-border-width: 2px; " +
+                        "-fx-border-width: 1px; " +
+                        "-fx-border-radius: 20px; " +
+                        "-fx-background-radius: 20px; " +
                         "-fx-font-family: 'Arial'; " +
                         "-fx-font-size: 16px; " +
                         "-fx-font-weight: bold; " +
-                        "-fx-effect: dropshadow(three-pass-box, #00ff00, 5, 0, 0, 0);"
+                        "-fx-effect: dropshadow(gaussian, #00ff00, 10, 0.5, 0, 0);"
         );
 
         // Эффекты при наведении
@@ -26,11 +28,13 @@ public class ArcadeButton {
                     "-fx-background-color: #003300; " +
                             "-fx-text-fill: #00ff00; " +
                             "-fx-border-color: #00ff00; " +
-                            "-fx-border-width: 3px; " +
+                            "-fx-border-width: 2px; " +
+                            "-fx-border-radius: 20px; " +
+                            "-fx-background-radius: 20px; " +
                             "-fx-font-family: 'Arial'; " +
                             "-fx-font-size: 16px; " +
                             "-fx-font-weight: bold; " +
-                            "-fx-effect: dropshadow(three-pass-box, #00ff00, 8, 0, 0, 0);"
+                            "-fx-effect: dropshadow(gaussian, #00ff00, 15, 0.7, 0, 0);"
             );
         });
 
@@ -39,11 +43,13 @@ public class ArcadeButton {
                     "-fx-background-color: black; " +
                             "-fx-text-fill: #00ff00; " +
                             "-fx-border-color: #00ff00; " +
-                            "-fx-border-width: 2px; " +
+                            "-fx-border-width: 1px; " +
+                            "-fx-border-radius: 20px; " +
+                            "-fx-background-radius: 20px; " +
                             "-fx-font-family: 'Arial'; " +
                             "-fx-font-size: 16px; " +
                             "-fx-font-weight: bold; " +
-                            "-fx-effect: dropshadow(three-pass-box, #00ff00, 5, 0, 0, 0);"
+                            "-fx-effect: dropshadow(gaussian, #00ff00, 10, 0.5, 0, 0);"
             );
         });
 
